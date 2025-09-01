@@ -96,7 +96,7 @@ class _SugarRecordFormDialogState extends State<SugarRecordFormDialog> {
                 keyboardType:
                     const TextInputType.numberWithOptions(decimal: true),
                 decoration: const InputDecoration(
-                  labelText: 'HbA1c (%)',
+                  labelText: 'HbA1c (%) - Normal: 4.0-5.6%',
                   hintText: 'Enter HbA1c percentage',
                   prefixIcon: Icon(Icons.bloodtype, color: Color(0xFF2E7D84)),
                 ),

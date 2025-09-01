@@ -127,7 +127,7 @@ class ProfileDetailScreen extends ConsumerWidget {
         Text(
           label,
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: AppTheme.secondaryTextColor,
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                 fontWeight: FontWeight.w500,
               ),
         ),
@@ -151,22 +151,24 @@ class ProfileDetailScreen extends ConsumerWidget {
           children: [
             // Tab Bar
             Container(
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+                borderRadius:
+                    const BorderRadius.vertical(top: Radius.circular(12)),
                 boxShadow: [
                   BoxShadow(
-                    color: AppTheme.shadowColor,
+                    color: Colors.black.withOpacity(0.1),
                     blurRadius: 4,
-                    offset: Offset(0, 2),
+                    offset: const Offset(0, 2),
                   ),
                 ],
               ),
-              child: const TabBar(
+              child: TabBar(
                 labelColor: AppTheme.primaryColor,
-                unselectedLabelColor: AppTheme.secondaryTextColor,
+                unselectedLabelColor:
+                    Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                 indicatorColor: AppTheme.primaryColor,
-                tabs: [
+                tabs: const [
                   Tab(
                     icon: Icon(Icons.favorite, size: 20),
                     text: 'Sugar',
@@ -186,15 +188,15 @@ class ProfileDetailScreen extends ConsumerWidget {
             // Tab Views
             Container(
               height: 400,
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius:
-                    BorderRadius.vertical(bottom: Radius.circular(12)),
+                    const BorderRadius.vertical(bottom: Radius.circular(12)),
                 boxShadow: [
                   BoxShadow(
-                    color: AppTheme.shadowColor,
+                    color: Colors.black.withOpacity(0.1),
                     blurRadius: 4,
-                    offset: Offset(0, 2),
+                    offset: const Offset(0, 2),
                   ),
                 ],
               ),
@@ -363,7 +365,7 @@ class ProfileDetailScreen extends ConsumerWidget {
               if (value == 'edit') {
                 _showSugarRecordForm(context, ref, record: record);
               } else if (value == 'delete') {
-                _deleteSugarRecord(ref, record);
+                _deleteSugarRecord(context, ref, record);
               }
             },
             itemBuilder: (context) => [
@@ -392,7 +394,7 @@ class ProfileDetailScreen extends ConsumerWidget {
               if (value == 'edit') {
                 _showBPRecordForm(context, ref, record: record);
               } else if (value == 'delete') {
-                _deleteBPRecord(ref, record);
+                _deleteBPRecord(context, ref, record);
               }
             },
             itemBuilder: (context) => [
@@ -428,7 +430,7 @@ class ProfileDetailScreen extends ConsumerWidget {
               if (value == 'edit') {
                 _showLipidRecordForm(context, ref, record: record);
               } else if (value == 'delete') {
-                _deleteLipidRecord(ref, record);
+                _deleteLipidRecord(context, ref, record);
               }
             },
             itemBuilder: (context) => [
@@ -570,20 +572,90 @@ class ProfileDetailScreen extends ConsumerWidget {
     );
   }
 
-  void _deleteSugarRecord(WidgetRef ref, SugarRecord record) {
-    final notifier =
-        ref.read(sugarRecordNotifierProvider(profile.id!).notifier);
-    notifier.deleteRecord(record.id!);
+  void _deleteSugarRecord(
+      BuildContext context, WidgetRef ref, SugarRecord record) {
+    _showDeleteConfirmationDialog(
+      context: context,
+      title: 'Delete HbA1c Record',
+      content:
+          'Are you sure you want to delete this HbA1c record?\n\nDate: ${DateFormat('MMM d, y').format(record.recordDate)}\nHbA1c: ${record.hba1c}%',
+      onConfirm: () {
+        final notifier =
+            ref.read(sugarRecordNotifierProvider(profile.id!).notifier);
+        notifier.deleteRecord(record.id!);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('HbA1c record deleted successfully')),
+        );
+      },
+    );
   }
 
-  void _deleteBPRecord(WidgetRef ref, BPRecord record) {
-    final notifier = ref.read(bpRecordNotifierProvider(profile.id!).notifier);
-    notifier.deleteRecord(record.id!);
+  void _deleteBPRecord(BuildContext context, WidgetRef ref, BPRecord record) {
+    _showDeleteConfirmationDialog(
+      context: context,
+      title: 'Delete Blood Pressure Record',
+      content:
+          'Are you sure you want to delete this blood pressure record?\n\nDate: ${DateFormat('MMM d, y').format(record.recordDate)}\nSystolic: ${record.systolic} mmHg\nDiastolic: ${record.diastolic} mmHg',
+      onConfirm: () {
+        final notifier =
+            ref.read(bpRecordNotifierProvider(profile.id!).notifier);
+        notifier.deleteRecord(record.id!);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('Blood pressure record deleted successfully')),
+        );
+      },
+    );
   }
 
-  void _deleteLipidRecord(WidgetRef ref, LipidRecord record) {
-    final notifier =
-        ref.read(lipidRecordNotifierProvider(profile.id!).notifier);
-    notifier.deleteRecord(record.id!);
+  void _deleteLipidRecord(
+      BuildContext context, WidgetRef ref, LipidRecord record) {
+    _showDeleteConfirmationDialog(
+      context: context,
+      title: 'Delete Lipid Profile Record',
+      content:
+          'Are you sure you want to delete this lipid profile record?\n\nDate: ${DateFormat('MMM d, y').format(record.recordDate)}\nTotal Cholesterol: ${record.cholesterolTotal} mg/dL\nLDL: ${record.ldl} mg/dL\nHDL: ${record.hdl} mg/dL',
+      onConfirm: () {
+        final notifier =
+            ref.read(lipidRecordNotifierProvider(profile.id!).notifier);
+        notifier.deleteRecord(record.id!);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('Lipid profile record deleted successfully')),
+        );
+      },
+    );
+  }
+
+  void _showDeleteConfirmationDialog({
+    required BuildContext context,
+    required String title,
+    required String content,
+    required VoidCallback onConfirm,
+  }) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(title),
+        content: Text(content),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              onConfirm();
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.errorColor,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
   }
 }

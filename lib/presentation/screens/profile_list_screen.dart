@@ -61,14 +61,16 @@ class ProfileListScreen extends ConsumerWidget {
           Text(
             'No profiles yet',
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  color: AppTheme.secondaryTextColor,
+                  color:
+                      Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                 ),
           ),
           const SizedBox(height: 8),
           Text(
             'Add a profile to start tracking health records',
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: AppTheme.secondaryTextColor,
+                  color:
+                      Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                 ),
             textAlign: TextAlign.center,
           ),
@@ -105,7 +107,8 @@ class ProfileListScreen extends ConsumerWidget {
           Text(
             error,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppTheme.secondaryTextColor,
+                  color:
+                      Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                 ),
             textAlign: TextAlign.center,
           ),
@@ -152,16 +155,20 @@ class ProfileListScreen extends ConsumerWidget {
             const SizedBox(height: 8),
             Row(
               children: [
-                const Icon(
+                Icon(
                   Icons.cake_outlined,
                   size: 16,
-                  color: AppTheme.secondaryTextColor,
+                  color:
+                      Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                 ),
                 const SizedBox(width: 4),
                 Text(
                   '${profile.age} years old',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppTheme.secondaryTextColor,
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withOpacity(0.7),
                       ),
                 ),
               ],
@@ -176,26 +183,34 @@ class ProfileListScreen extends ConsumerWidget {
                           ? Icons.female
                           : Icons.person,
                   size: 16,
-                  color: AppTheme.secondaryTextColor,
+                  color:
+                      Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                 ),
                 const SizedBox(width: 4),
                 Text(
                   profile.gender,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppTheme.secondaryTextColor,
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withOpacity(0.7),
                       ),
                 ),
                 const SizedBox(width: 16),
-                const Icon(
+                Icon(
                   Icons.bloodtype,
                   size: 16,
-                  color: AppTheme.secondaryTextColor,
+                  color:
+                      Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                 ),
                 const SizedBox(width: 4),
                 Text(
                   profile.bloodGroup,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppTheme.secondaryTextColor,
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withOpacity(0.7),
                       ),
                 ),
               ],

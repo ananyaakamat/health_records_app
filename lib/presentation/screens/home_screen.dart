@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/themes/app_theme.dart';
+import '../providers/theme_provider.dart';
 import 'profile_list_screen.dart';
 
 class HomeScreen extends ConsumerWidget {
@@ -9,6 +10,9 @@ class HomeScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final themeNotifier = ref.read(themeProvider.notifier);
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text(AppConstants.appName),
@@ -19,16 +23,23 @@ class HomeScreen extends ConsumerWidget {
             onPressed: () => Scaffold.of(context).openDrawer(),
           ),
         ),
+        actions: [
+          IconButton(
+            icon: Icon(isDarkMode ? Icons.light_mode : Icons.dark_mode),
+            onPressed: () => themeNotifier.toggleTheme(),
+            tooltip: 'Toggle theme',
+          ),
+        ],
       ),
       drawer: _buildDrawer(context),
       body: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              AppTheme.backgroundColor,
-              Colors.white,
+              Theme.of(context).colorScheme.surface,
+              Theme.of(context).scaffoldBackgroundColor,
             ],
           ),
         ),
@@ -44,11 +55,11 @@ class HomeScreen extends ConsumerWidget {
                 decoration: BoxDecoration(
                   color: AppTheme.primaryColor,
                   borderRadius: BorderRadius.circular(60),
-                  boxShadow: const [
+                  boxShadow: [
                     BoxShadow(
-                      color: AppTheme.shadowColor,
+                      color: Colors.black.withOpacity(0.2),
                       blurRadius: 20,
-                      offset: Offset(0, 10),
+                      offset: const Offset(0, 10),
                     ),
                   ],
                 ),
@@ -65,7 +76,7 @@ class HomeScreen extends ConsumerWidget {
               Text(
                 'Welcome to Medical Records',
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      color: AppTheme.secondaryTextColor,
+                      color: Theme.of(context).colorScheme.onSurface,
                       fontWeight: FontWeight.w300,
                     ),
               ),
@@ -74,7 +85,10 @@ class HomeScreen extends ConsumerWidget {
               Text(
                 'Manage your health records efficiently',
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: AppTheme.secondaryTextColor,
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withOpacity(0.7),
                     ),
                 textAlign: TextAlign.center,
               ),
@@ -146,76 +160,107 @@ class HomeScreen extends ConsumerWidget {
   }
 
   Widget _buildDrawer(BuildContext context) {
-    return Drawer(
-      child: ListView(
-        padding: EdgeInsets.zero,
-        children: [
-          DrawerHeader(
-            decoration: AppTheme.primaryGradientDecoration,
-            child: const Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                Icon(
-                  Icons.health_and_safety,
-                  color: Colors.white,
-                  size: 48,
-                ),
-                SizedBox(height: 8),
-                Text(
-                  AppConstants.appName,
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
+    return Consumer(
+      builder: (context, ref, child) {
+        final themeNotifier = ref.read(themeProvider.notifier);
+        final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
+        return Drawer(
+          child: ListView(
+            padding: EdgeInsets.zero,
+            children: [
+              DrawerHeader(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: isDarkMode
+                        ? [AppTheme.darkPrimaryColor, const Color(0xFF2A6065)]
+                        : [AppTheme.primaryColor, const Color(0xFF1E5A5F)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                   ),
                 ),
-                Text(
-                  'v${AppConstants.appVersion}',
+                child: const Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    Icon(
+                      Icons.health_and_safety,
+                      color: Colors.white,
+                      size: 48,
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      AppConstants.appName,
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      'v${AppConstants.appVersion}',
+                      style: TextStyle(
+                        color: Colors.white70,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              ListTile(
+                leading: const Icon(Icons.people, color: AppTheme.primaryColor),
+                title: const Text(
+                  'Profiles',
                   style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 14,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
-              ],
-            ),
-          ),
-          ListTile(
-            leading: const Icon(Icons.people, color: AppTheme.primaryColor),
-            title: const Text(
-              'Profiles',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
+                onTap: () {
+                  Navigator.of(context).pop();
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => const ProfileListScreen(),
+                    ),
+                  );
+                },
               ),
-            ),
-            onTap: () {
-              Navigator.of(context).pop();
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => const ProfileListScreen(),
+              ListTile(
+                leading: Icon(
+                  isDarkMode ? Icons.light_mode : Icons.dark_mode,
+                  color: AppTheme.primaryColor,
                 ),
-              );
-            },
-          ),
-          const Divider(),
-          ListTile(
-            leading:
-                const Icon(Icons.info_outline, color: AppTheme.primaryColor),
-            title: const Text(
-              'About',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
+                title: Text(
+                  isDarkMode ? 'Light Mode' : 'Dark Mode',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                onTap: () {
+                  themeNotifier.toggleTheme();
+                },
               ),
-            ),
-            onTap: () {
-              Navigator.of(context).pop();
-              _showAboutDialog(context);
-            },
+              const Divider(),
+              ListTile(
+                leading: const Icon(Icons.info_outline,
+                    color: AppTheme.primaryColor),
+                title: const Text(
+                  'About',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  _showAboutDialog(context);
+                },
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -225,9 +270,23 @@ class HomeScreen extends ConsumerWidget {
     required String title,
     required String subtitle,
   }) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       padding: const EdgeInsets.all(20),
-      decoration: AppTheme.cardDecoration,
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: isDarkMode
+                ? Colors.black.withOpacity(0.3)
+                : Colors.black.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
       child: Row(
         children: [
           Container(
@@ -258,7 +317,10 @@ class HomeScreen extends ConsumerWidget {
                 Text(
                   subtitle,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppTheme.secondaryTextColor,
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withOpacity(0.6),
                       ),
                 ),
               ],

@@ -37,6 +37,9 @@ dependencies:
   # Additional UI Components
   flutter_datetime_picker_plus: ^2.1.0
 
+  # Theme Persistence
+  shared_preferences: ^2.2.2
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

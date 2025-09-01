@@ -28,9 +28,10 @@ class _BPRecordFormDialogState extends State<BPRecordFormDialog> {
   void initState() {
     super.initState();
     if (widget.record != null) {
-      _systolicController.text = widget.record!.systolic.toString();
-      _diastolicController.text = widget.record!.diastolic.toString();
-      _selectedDate = widget.record!.recordDate;
+      final record = widget.record!;
+      _systolicController.text = record.systolic.toString();
+      _diastolicController.text = record.diastolic.toString();
+      _selectedDate = record.recordDate;
     }
   }
 
@@ -42,7 +43,7 @@ class _BPRecordFormDialogState extends State<BPRecordFormDialog> {
   }
 
   Future<void> _selectDate() async {
-    final pickedDate = await showDatePicker(
+    final DateTime? pickedDate = await showDatePicker(
       context: context,
       initialDate: _selectedDate,
       firstDate: DateTime(2000),
@@ -97,66 +98,57 @@ class _BPRecordFormDialogState extends State<BPRecordFormDialog> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: TextFormField(
-                      controller: _systolicController,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        labelText: 'Systolic (mmHg)',
-                        hintText: '120',
-                        prefixIcon:
-                            Icon(Icons.favorite, color: Color(0xFF2E7D84)),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter systolic value';
-                        }
-                        final systolic = int.tryParse(value);
-                        if (systolic == null || systolic <= 0) {
-                          return 'Please enter a valid systolic value';
-                        }
-                        if (systolic < 60 || systolic > 300) {
-                          return 'Systolic value should be between 60-300';
-                        }
-                        return null;
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: TextFormField(
-                      controller: _diastolicController,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        labelText: 'Diastolic (mmHg)',
-                        hintText: '80',
-                        prefixIcon:
-                            Icon(Icons.monitor_heart, color: Color(0xFF2E7D84)),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter diastolic value';
-                        }
-                        final diastolic = int.tryParse(value);
-                        if (diastolic == null || diastolic <= 0) {
-                          return 'Please enter a valid diastolic value';
-                        }
-                        if (diastolic < 40 || diastolic > 200) {
-                          return 'Diastolic value should be between 40-200';
-                        }
+              TextFormField(
+                controller: _systolicController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'Systolic (mmHg) - Normal: <120',
+                  hintText: '120',
+                  prefixIcon: Icon(Icons.favorite, color: Color(0xFF2E7D84)),
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter systolic value';
+                  }
+                  final systolic = int.tryParse(value);
+                  if (systolic == null || systolic <= 0) {
+                    return 'Please enter a valid systolic value';
+                  }
+                  if (systolic < 60 || systolic > 300) {
+                    return 'Systolic value should be between 60-300';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _diastolicController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'Diastolic (mmHg) - Normal: <80',
+                  hintText: '80',
+                  prefixIcon:
+                      Icon(Icons.monitor_heart, color: Color(0xFF2E7D84)),
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter diastolic value';
+                  }
+                  final diastolic = int.tryParse(value);
+                  if (diastolic == null || diastolic <= 0) {
+                    return 'Please enter a valid diastolic value';
+                  }
+                  if (diastolic < 40 || diastolic > 200) {
+                    return 'Diastolic value should be between 40-200';
+                  }
 
-                        // Check if systolic is greater than diastolic
-                        final systolic = int.tryParse(_systolicController.text);
-                        if (systolic != null && diastolic >= systolic) {
-                          return 'Diastolic should be less than systolic';
-                        }
-                        return null;
-                      },
-                    ),
-                  ),
-                ],
+                  // Check if systolic is greater than diastolic
+                  final systolic = int.tryParse(_systolicController.text);
+                  if (systolic != null && diastolic >= systolic) {
+                    return 'Diastolic should be less than systolic';
+                  }
+                  return null;
+                },
               ),
               const SizedBox(height: 16),
               InkWell(

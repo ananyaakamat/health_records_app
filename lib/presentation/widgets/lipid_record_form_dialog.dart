@@ -159,7 +159,7 @@ class _LipidRecordFormDialogState extends State<LipidRecordFormDialog> {
                   children: [
                     Expanded(
                       child: _buildTextField(
-                        label: 'Total Cholesterol (mg/dL)',
+                        label: 'Total Cholesterol (mg/dL) - Normal: <200',
                         hint: '200',
                         controller: _cholesterolTotalController,
                         validatorMessage: 'Please enter total cholesterol',
@@ -170,7 +170,7 @@ class _LipidRecordFormDialogState extends State<LipidRecordFormDialog> {
                     const SizedBox(width: 16),
                     Expanded(
                       child: _buildTextField(
-                        label: 'HDL (mg/dL)',
+                        label: 'HDL Cholesterol (mg/dL) - Normal: 40-60',
                         hint: '50',
                         controller: _hdlController,
                         validatorMessage: 'Please enter HDL value',
@@ -185,7 +185,7 @@ class _LipidRecordFormDialogState extends State<LipidRecordFormDialog> {
                   children: [
                     Expanded(
                       child: _buildTextField(
-                        label: 'LDL (mg/dL)',
+                        label: 'LDL Cholesterol (mg/dL) - Normal: 0-159',
                         hint: '120',
                         controller: _ldlController,
                         validatorMessage: 'Please enter LDL value',
@@ -196,7 +196,7 @@ class _LipidRecordFormDialogState extends State<LipidRecordFormDialog> {
                     const SizedBox(width: 16),
                     Expanded(
                       child: _buildTextField(
-                        label: 'Triglycerides (mg/dL)',
+                        label: 'Triglycerides (mg/dL) - Normal: <150',
                         hint: '150',
                         controller: _triglyceridesController,
                         validatorMessage: 'Please enter triglycerides value',
@@ -211,7 +211,7 @@ class _LipidRecordFormDialogState extends State<LipidRecordFormDialog> {
                   children: [
                     Expanded(
                       child: _buildTextField(
-                        label: 'VLDL (mg/dL)',
+                        label: 'VLDL Cholesterol (mg/dL) - Normal: 0-40',
                         hint: '30',
                         controller: _vldlController,
                         validatorMessage: 'Please enter VLDL value',
@@ -222,7 +222,7 @@ class _LipidRecordFormDialogState extends State<LipidRecordFormDialog> {
                     const SizedBox(width: 16),
                     Expanded(
                       child: _buildTextField(
-                        label: 'Non-HDL (mg/dL)',
+                        label: 'Non-HDL Cholesterol (mg/dL) - Normal: <130',
                         hint: '150',
                         controller: _nonHdlController,
                         validatorMessage: 'Please enter Non-HDL value',
@@ -234,7 +234,7 @@ class _LipidRecordFormDialogState extends State<LipidRecordFormDialog> {
                 ),
                 const SizedBox(height: 16),
                 _buildTextField(
-                  label: 'Cholesterol/HDL Ratio',
+                  label: 'Cholesterol/HDL Ratio - Normal: 0-5',
                   hint: '4.0',
                   controller: _cholHdlRatioController,
                   validatorMessage: 'Please enter cholesterol/HDL ratio',
