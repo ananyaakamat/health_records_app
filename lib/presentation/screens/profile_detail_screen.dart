@@ -1133,18 +1133,51 @@ class _FullScreenGraphScreenState extends ConsumerState<FullScreenGraphScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('${widget.title} - ${widget.profile.name}'),
-        centerTitle: true,
-        leading: IconButton(
-          icon: const Icon(Icons.close),
-          onPressed: () => Navigator.pop(context),
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: Stack(
+          children: [
+            // Full screen graph with minimal padding for true 80% coverage
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: _buildFullScreenGraph(),
+            ),
+            // Close button overlay - moved to bottom right
+            Positioned(
+              bottom: 8,
+              right: 8,
+              child: Material(
+                color: Colors.black54,
+                shape: const CircleBorder(),
+                child: IconButton(
+                  icon: const Icon(Icons.close, color: Colors.white),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ),
+            ),
+            // Title overlay - moved to bottom left
+            Positioned(
+              bottom: 8,
+              left: 8,
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.black54,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  '${widget.title} - ${widget.profile.name}',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(
-            8.0), // Reduced from 16.0 to 8.0 for 80% screen coverage
-        child: _buildFullScreenGraph(),
       ),
     );
   }
@@ -1180,72 +1213,171 @@ class _FullScreenGraphScreenState extends ConsumerState<FullScreenGraphScreen> {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: SizedBox(
-        width: math.max(400, sortedRecords.length * 80.0),
-        child: LineChart(
-          LineChartData(
-            gridData: const FlGridData(
-              show: true,
-              drawVerticalLine: true,
-              horizontalInterval: 0.5,
-              verticalInterval: 1,
-            ),
-            titlesData: FlTitlesData(
-              leftTitles: AxisTitles(
-                sideTitles: SideTitles(
-                  showTitles: true,
-                  reservedSize: 60,
-                  getTitlesWidget: (value, meta) {
-                    return Text(
-                      '${value.toStringAsFixed(1)}%',
-                      style: const TextStyle(fontSize: 14),
-                    );
-                  },
-                ),
-              ),
-              bottomTitles: AxisTitles(
-                sideTitles: SideTitles(
-                  showTitles: true,
-                  reservedSize: 80,
-                  interval: 1,
-                  getTitlesWidget: (value, meta) {
-                    final index = value.toInt();
-                    if (index >= 0 && index < sortedRecords.length) {
-                      return Padding(
-                        padding: const EdgeInsets.only(top: 8.0),
-                        child: Transform.rotate(
-                          angle: -0.2,
-                          child: Text(
-                            DateFormat('MM/dd/yy')
-                                .format(sortedRecords[index].recordDate),
-                            style: const TextStyle(fontSize: 12),
+        width: math.max(
+            400,
+            sortedRecords.length * 80.0 +
+                80), // Added extra 80px padding for last date
+        child: Stack(
+          children: [
+            // Main LineChart
+            LineChart(
+              LineChartData(
+                lineTouchData: LineTouchData(
+                  enabled: true,
+                  touchTooltipData: LineTouchTooltipData(
+                    getTooltipItems: (List<LineBarSpot> touchedBarSpots) {
+                      return touchedBarSpots.map((barSpot) {
+                        return LineTooltipItem(
+                          '${barSpot.y.toStringAsFixed(1)}%',
+                          const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
                           ),
-                        ),
-                      );
-                    }
-                    return const Text('');
-                  },
+                        );
+                      }).toList();
+                    },
+                  ),
                 ),
-              ),
-              rightTitles:
-                  const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-              topTitles:
-                  const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            ),
-            borderData: FlBorderData(show: true),
-            lineBarsData: [
-              LineChartBarData(
-                spots: spots,
-                isCurved: true,
-                color: AppTheme.primaryColor,
-                barWidth: 4,
-                dotData: const FlDotData(show: true),
-                belowBarData: BarAreaData(
+                gridData: const FlGridData(
                   show: true,
-                  color: AppTheme.primaryColor.withOpacity(0.2),
+                  drawVerticalLine: true,
+                  horizontalInterval: 0.5,
+                  verticalInterval: 1,
                 ),
+                titlesData: FlTitlesData(
+                  leftTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      reservedSize: 60,
+                      getTitlesWidget: (value, meta) {
+                        return Text(
+                          '${value.toStringAsFixed(1)}%',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  bottomTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      reservedSize:
+                          120, // Further increased to prevent date truncation
+                      interval: 1,
+                      getTitlesWidget: (value, meta) {
+                        final index = value.toInt();
+                        if (index >= 0 && index < sortedRecords.length) {
+                          return Padding(
+                            padding: const EdgeInsets.only(top: 8.0),
+                            child: Transform.rotate(
+                              angle: -0.2,
+                              child: Text(
+                                DateFormat('MM/dd/yy')
+                                    .format(sortedRecords[index].recordDate),
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                            ),
+                          );
+                        }
+                        return const Text('');
+                      },
+                    ),
+                  ),
+                  rightTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false)),
+                  topTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false)),
+                ),
+                borderData: FlBorderData(show: true),
+                lineBarsData: [
+                  LineChartBarData(
+                    spots: spots,
+                    isCurved: true,
+                    color: AppTheme.primaryColor,
+                    barWidth: 4,
+                    dotData: FlDotData(
+                      show: true,
+                      getDotPainter: (spot, percent, barData, index) =>
+                          FlDotCirclePainter(
+                        radius: 3, // Reduced dot size as requested
+                        color: AppTheme.primaryColor,
+                        strokeWidth: 1,
+                        strokeColor: Colors.white,
+                      ),
+                    ),
+                    showingIndicators:
+                        List.generate(spots.length, (index) => index),
+                    belowBarData: BarAreaData(
+                      show: true,
+                      color: AppTheme.primaryColor.withOpacity(0.2),
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+            // Permanently visible data value labels
+            ...spots.asMap().entries.map((entry) {
+              final index = entry.key;
+              final spot = entry.value;
+
+              // Calculate accurate position accounting for left axis reserved size
+              final xOffset = 60 +
+                  (index * 80.0) +
+                  40; // 60px left axis + index spacing + centering
+
+              // Calculate Y position based on the actual data value
+              // Assuming chart area is ~300px high, starting at ~100px from top
+              final minValue =
+                  records.map((r) => r.hba1c).reduce((a, b) => a < b ? a : b) -
+                      0.2;
+              final maxValue =
+                  records.map((r) => r.hba1c).reduce((a, b) => a > b ? a : b) +
+                      0.2;
+              const chartAreaTop = 100.0;
+              const chartAreaHeight = 300.0;
+              final normalizedValue =
+                  (spot.y - minValue) / (maxValue - minValue);
+              final yOffset = chartAreaTop +
+                  (chartAreaHeight * (1 - normalizedValue)) -
+                  30; // -30 to position above the dot
+
+              return Positioned(
+                left: xOffset,
+                top: yOffset,
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.black87,
+                    borderRadius: BorderRadius.circular(8),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Colors.black26,
+                        offset: Offset(0, 2),
+                        blurRadius: 4,
+                      ),
+                    ],
+                  ),
+                  child: Text(
+                    '${spot.y.toStringAsFixed(1)}%',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              );
+            }),
+          ],
         ),
       ),
     );
@@ -1293,75 +1425,238 @@ class _FullScreenGraphScreenState extends ConsumerState<FullScreenGraphScreen> {
           child: SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: SizedBox(
-              width: math.max(400, sortedRecords.length * 80.0),
-              child: LineChart(
-                LineChartData(
-                  gridData: const FlGridData(
-                    show: true,
-                    drawVerticalLine: true,
-                    horizontalInterval: 10,
-                    verticalInterval: 1,
-                  ),
-                  titlesData: FlTitlesData(
-                    leftTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true,
-                        reservedSize: 60,
-                        getTitlesWidget: (value, meta) {
-                          return Text(
-                            '${value.toInt()}',
-                            style: const TextStyle(fontSize: 14),
-                          );
-                        },
-                      ),
-                    ),
-                    bottomTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true,
-                        reservedSize: 80,
-                        interval: 1,
-                        getTitlesWidget: (value, meta) {
-                          final index = value.toInt();
-                          if (index >= 0 && index < sortedRecords.length) {
-                            return Padding(
-                              padding: const EdgeInsets.only(top: 8.0),
-                              child: Transform.rotate(
-                                angle: -0.2,
-                                child: Text(
-                                  DateFormat('MM/dd/yy')
-                                      .format(sortedRecords[index].recordDate),
-                                  style: const TextStyle(fontSize: 12),
+              width: math.max(
+                  400,
+                  sortedRecords.length * 80.0 +
+                      80), // Added extra 80px padding for last date
+              child: Stack(
+                children: [
+                  // Main LineChart
+                  LineChart(
+                    LineChartData(
+                      lineTouchData: LineTouchData(
+                        enabled: true,
+                        touchTooltipData: LineTouchTooltipData(
+                          getTooltipItems: (List<LineBarSpot> touchedBarSpots) {
+                            return touchedBarSpots.map((barSpot) {
+                              final isSystemic = barSpot.barIndex == 0;
+                              return LineTooltipItem(
+                                '${isSystemic ? "Sys" : "Dia"}: ${barSpot.y.toInt()}',
+                                const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
                                 ),
-                              ),
-                            );
-                          }
-                          return const Text('');
-                        },
+                              );
+                            }).toList();
+                          },
+                        ),
                       ),
+                      gridData: const FlGridData(
+                        show: true,
+                        drawVerticalLine: true,
+                        horizontalInterval: 10,
+                        verticalInterval: 1,
+                      ),
+                      titlesData: FlTitlesData(
+                        leftTitles: AxisTitles(
+                          sideTitles: SideTitles(
+                            showTitles: true,
+                            reservedSize: 60,
+                            getTitlesWidget: (value, meta) {
+                              return Text(
+                                '${value.toInt()}',
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black87,
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                        bottomTitles: AxisTitles(
+                          sideTitles: SideTitles(
+                            showTitles: true,
+                            reservedSize:
+                                120, // Further increased to prevent date truncation
+                            interval: 1,
+                            getTitlesWidget: (value, meta) {
+                              final index = value.toInt();
+                              if (index >= 0 && index < sortedRecords.length) {
+                                return Padding(
+                                  padding: const EdgeInsets.only(top: 8.0),
+                                  child: Transform.rotate(
+                                    angle: -0.2,
+                                    child: Text(
+                                      DateFormat('MM/dd/yy').format(
+                                          sortedRecords[index].recordDate),
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.black87,
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              }
+                              return const Text('');
+                            },
+                          ),
+                        ),
+                        rightTitles: const AxisTitles(
+                            sideTitles: SideTitles(showTitles: false)),
+                        topTitles: const AxisTitles(
+                            sideTitles: SideTitles(showTitles: false)),
+                      ),
+                      borderData: FlBorderData(show: true),
+                      lineBarsData: [
+                        LineChartBarData(
+                          spots: systolicSpots,
+                          isCurved: true,
+                          color: Colors.red,
+                          barWidth: 4,
+                          dotData: FlDotData(
+                            show: true,
+                            getDotPainter: (spot, percent, barData, index) =>
+                                FlDotCirclePainter(
+                              radius: 3, // Reduced dot size as requested
+                              color: Colors.red,
+                              strokeWidth: 1,
+                              strokeColor: Colors.white,
+                            ),
+                          ),
+                        ),
+                        LineChartBarData(
+                          spots: diastolicSpots,
+                          isCurved: true,
+                          color: Colors.blue,
+                          barWidth: 4,
+                          dotData: FlDotData(
+                            show: true,
+                            getDotPainter: (spot, percent, barData, index) =>
+                                FlDotCirclePainter(
+                              radius: 3, // Reduced dot size as requested
+                              color: Colors.blue,
+                              strokeWidth: 1,
+                              strokeColor: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                    rightTitles: const AxisTitles(
-                        sideTitles: SideTitles(showTitles: false)),
-                    topTitles: const AxisTitles(
-                        sideTitles: SideTitles(showTitles: false)),
                   ),
-                  borderData: FlBorderData(show: true),
-                  lineBarsData: [
-                    LineChartBarData(
-                      spots: systolicSpots,
-                      isCurved: true,
-                      color: Colors.red,
-                      barWidth: 4,
-                      dotData: const FlDotData(show: true),
-                    ),
-                    LineChartBarData(
-                      spots: diastolicSpots,
-                      isCurved: true,
-                      color: Colors.blue,
-                      barWidth: 4,
-                      dotData: const FlDotData(show: true),
-                    ),
-                  ],
-                ),
+                  // Permanently visible systolic data value labels
+                  ...systolicSpots.asMap().entries.map((entry) {
+                    final index = entry.key;
+                    final spot = entry.value;
+
+                    // Calculate accurate position accounting for left axis reserved size
+                    final xOffset = 60 +
+                        (index * 80.0) +
+                        30; // 60px left axis + index spacing + centering
+
+                    // Calculate Y position based on the actual systolic data value
+                    final minSystolic = records
+                            .map((r) => r.systolic)
+                            .reduce((a, b) => a < b ? a : b) -
+                        10;
+                    final maxSystolic = records
+                            .map((r) => r.systolic)
+                            .reduce((a, b) => a > b ? a : b) +
+                        10;
+                    const chartAreaTop = 100.0;
+                    const chartAreaHeight = 300.0;
+                    final normalizedValue =
+                        (spot.y - minSystolic) / (maxSystolic - minSystolic);
+                    final yOffset = chartAreaTop +
+                        (chartAreaHeight * (1 - normalizedValue)) -
+                        30; // Position above the dot
+
+                    return Positioned(
+                      left: xOffset,
+                      top: yOffset,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: Colors.red.withOpacity(0.9),
+                          borderRadius: BorderRadius.circular(6),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Colors.black26,
+                              offset: Offset(0, 2),
+                              blurRadius: 4,
+                            ),
+                          ],
+                        ),
+                        child: Text(
+                          '${spot.y.toInt()}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    );
+                  }),
+                  // Permanently visible diastolic data value labels
+                  ...diastolicSpots.asMap().entries.map((entry) {
+                    final index = entry.key;
+                    final spot = entry.value;
+
+                    // Calculate accurate position accounting for left axis reserved size
+                    final xOffset = 60 +
+                        (index * 80.0) +
+                        35; // 60px left axis + index spacing + centering
+
+                    // Calculate Y position based on the actual diastolic data value
+                    final minDiastolic = records
+                            .map((r) => r.diastolic)
+                            .reduce((a, b) => a < b ? a : b) -
+                        10;
+                    final maxDiastolic = records
+                            .map((r) => r.diastolic)
+                            .reduce((a, b) => a > b ? a : b) +
+                        10;
+                    const chartAreaTop = 100.0;
+                    const chartAreaHeight = 300.0;
+                    final normalizedValue =
+                        (spot.y - minDiastolic) / (maxDiastolic - minDiastolic);
+                    final yOffset = chartAreaTop +
+                        (chartAreaHeight * (1 - normalizedValue)) -
+                        30; // Position above the dot
+
+                    return Positioned(
+                      left: xOffset,
+                      top: yOffset,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: Colors.blue.withOpacity(0.9),
+                          borderRadius: BorderRadius.circular(6),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Colors.black26,
+                              offset: Offset(0, 2),
+                              blurRadius: 4,
+                            ),
+                          ],
+                        ),
+                        child: Text(
+                          '${spot.y.toInt()}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    );
+                  }),
+                ],
               ),
             ),
           ),
@@ -1449,110 +1744,439 @@ class _FullScreenGraphScreenState extends ConsumerState<FullScreenGraphScreen> {
           child: SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: SizedBox(
-              width: math.max(400, sortedRecords.length * 80.0),
-              child: LineChart(
-                LineChartData(
-                  gridData: const FlGridData(
-                    show: true,
-                    drawVerticalLine: true,
-                    horizontalInterval: 20,
-                    verticalInterval: 1,
-                  ),
-                  titlesData: FlTitlesData(
-                    leftTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true,
-                        reservedSize: 60,
-                        getTitlesWidget: (value, meta) {
-                          return Text(
-                            '${value.toInt()}',
-                            style: const TextStyle(fontSize: 14),
-                          );
-                        },
-                      ),
-                    ),
-                    bottomTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true,
-                        reservedSize: 80,
-                        interval: 1,
-                        getTitlesWidget: (value, meta) {
-                          final index = value.toInt();
-                          if (index >= 0 && index < sortedRecords.length) {
-                            return Padding(
-                              padding: const EdgeInsets.only(top: 8.0),
-                              child: Transform.rotate(
-                                angle: -0.2,
-                                child: Text(
-                                  DateFormat('MM/dd/yy')
-                                      .format(sortedRecords[index].recordDate),
-                                  style: const TextStyle(fontSize: 12),
+              width: math.max(
+                  400,
+                  sortedRecords.length * 80.0 +
+                      80), // Added extra 80px padding for last date
+              child: Stack(
+                children: [
+                  // Main LineChart
+                  LineChart(
+                    LineChartData(
+                      lineTouchData: LineTouchData(
+                        enabled: true,
+                        touchTooltipData: LineTouchTooltipData(
+                          getTooltipItems: (List<LineBarSpot> touchedBarSpots) {
+                            final labels = [
+                              'Total Chol',
+                              'HDL',
+                              'LDL',
+                              'Triglycerides',
+                              'VLDL',
+                              'Non-HDL',
+                              'Chol/HDL'
+                            ];
+                            return touchedBarSpots.map((barSpot) {
+                              final labelIndex = barSpot.barIndex;
+                              return LineTooltipItem(
+                                '${labels[labelIndex]}: ${barSpot.y.toInt()}',
+                                const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
                                 ),
-                              ),
-                            );
-                          }
-                          return const Text('');
-                        },
+                              );
+                            }).toList();
+                          },
+                        ),
                       ),
+                      gridData: const FlGridData(
+                        show: true,
+                        drawVerticalLine: true,
+                        horizontalInterval: 20,
+                        verticalInterval: 1,
+                      ),
+                      titlesData: FlTitlesData(
+                        leftTitles: AxisTitles(
+                          sideTitles: SideTitles(
+                            showTitles: true,
+                            reservedSize: 60,
+                            getTitlesWidget: (value, meta) {
+                              return Text(
+                                '${value.toInt()}',
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black87,
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                        bottomTitles: AxisTitles(
+                          sideTitles: SideTitles(
+                            showTitles: true,
+                            reservedSize:
+                                120, // Further increased to prevent date truncation
+                            interval: 1,
+                            getTitlesWidget: (value, meta) {
+                              final index = value.toInt();
+                              if (index >= 0 && index < sortedRecords.length) {
+                                return Padding(
+                                  padding: const EdgeInsets.only(top: 8.0),
+                                  child: Transform.rotate(
+                                    angle: -0.2,
+                                    child: Text(
+                                      DateFormat('MM/dd/yy').format(
+                                          sortedRecords[index].recordDate),
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.black87,
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              }
+                              return const Text('');
+                            },
+                          ),
+                        ),
+                        rightTitles: const AxisTitles(
+                            sideTitles: SideTitles(showTitles: false)),
+                        topTitles: const AxisTitles(
+                            sideTitles: SideTitles(showTitles: false)),
+                      ),
+                      borderData: FlBorderData(show: true),
+                      lineBarsData: [
+                        LineChartBarData(
+                          spots: totalCholesterolSpots,
+                          isCurved: true,
+                          color: Colors.orange,
+                          barWidth: 3,
+                          dotData: FlDotData(
+                            show: true,
+                            getDotPainter: (spot, percent, barData, index) =>
+                                FlDotCirclePainter(
+                              radius: 3, // Reduced dot size as requested
+                              color: Colors.orange,
+                              strokeWidth: 1,
+                              strokeColor: Colors.white,
+                            ),
+                          ),
+                        ),
+                        LineChartBarData(
+                          spots: hdlSpots,
+                          isCurved: true,
+                          color: Colors.green,
+                          barWidth: 3,
+                          dotData: FlDotData(
+                            show: true,
+                            getDotPainter: (spot, percent, barData, index) =>
+                                FlDotCirclePainter(
+                              radius: 3, // Reduced dot size as requested
+                              color: Colors.green,
+                              strokeWidth: 1,
+                              strokeColor: Colors.white,
+                            ),
+                          ),
+                        ),
+                        LineChartBarData(
+                          spots: ldlSpots,
+                          isCurved: true,
+                          color: Colors.red,
+                          barWidth: 3,
+                          dotData: FlDotData(
+                            show: true,
+                            getDotPainter: (spot, percent, barData, index) =>
+                                FlDotCirclePainter(
+                              radius: 3, // Reduced dot size as requested
+                              color: Colors.red,
+                              strokeWidth: 1,
+                              strokeColor: Colors.white,
+                            ),
+                          ),
+                        ),
+                        LineChartBarData(
+                          spots: triglyceridesSpots,
+                          isCurved: true,
+                          color: Colors.purple,
+                          barWidth: 3,
+                          dotData: FlDotData(
+                            show: true,
+                            getDotPainter: (spot, percent, barData, index) =>
+                                FlDotCirclePainter(
+                              radius: 3, // Reduced dot size as requested
+                              color: Colors.purple,
+                              strokeWidth: 1,
+                              strokeColor: Colors.white,
+                            ),
+                          ),
+                        ),
+                        LineChartBarData(
+                          spots: vldlSpots,
+                          isCurved: true,
+                          color: Colors.teal,
+                          barWidth: 3,
+                          dotData: FlDotData(
+                            show: true,
+                            getDotPainter: (spot, percent, barData, index) =>
+                                FlDotCirclePainter(
+                              radius: 3, // Reduced dot size as requested
+                              color: Colors.teal,
+                              strokeWidth: 1,
+                              strokeColor: Colors.white,
+                            ),
+                          ),
+                        ),
+                        LineChartBarData(
+                          spots: nonHdlSpots,
+                          isCurved: true,
+                          color: Colors.brown,
+                          barWidth: 3,
+                          dotData: FlDotData(
+                            show: true,
+                            getDotPainter: (spot, percent, barData, index) =>
+                                FlDotCirclePainter(
+                              radius: 3, // Reduced dot size as requested
+                              color: Colors.brown,
+                              strokeWidth: 1,
+                              strokeColor: Colors.white,
+                            ),
+                          ),
+                        ),
+                        LineChartBarData(
+                          spots: cholHdlRatioSpots,
+                          isCurved: true,
+                          color: Colors.pink,
+                          barWidth: 3,
+                          dotData: FlDotData(
+                            show: true,
+                            getDotPainter: (spot, percent, barData, index) =>
+                                FlDotCirclePainter(
+                              radius: 3, // Reduced dot size as requested
+                              color: Colors.pink,
+                              strokeWidth: 1,
+                              strokeColor: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                    rightTitles: const AxisTitles(
-                        sideTitles: SideTitles(showTitles: false)),
-                    topTitles: const AxisTitles(
-                        sideTitles: SideTitles(showTitles: false)),
                   ),
-                  borderData: FlBorderData(show: true),
-                  lineBarsData: [
-                    LineChartBarData(
-                      spots: totalCholesterolSpots,
-                      isCurved: true,
-                      color: Colors.orange,
-                      barWidth: 3,
-                      dotData: const FlDotData(show: true),
-                    ),
-                    LineChartBarData(
-                      spots: hdlSpots,
-                      isCurved: true,
-                      color: Colors.green,
-                      barWidth: 3,
-                      dotData: const FlDotData(show: true),
-                    ),
-                    LineChartBarData(
-                      spots: ldlSpots,
-                      isCurved: true,
-                      color: Colors.red,
-                      barWidth: 3,
-                      dotData: const FlDotData(show: true),
-                    ),
-                    LineChartBarData(
-                      spots: triglyceridesSpots,
-                      isCurved: true,
-                      color: Colors.purple,
-                      barWidth: 3,
-                      dotData: const FlDotData(show: true),
-                    ),
-                    LineChartBarData(
-                      spots: vldlSpots,
-                      isCurved: true,
-                      color: Colors.teal,
-                      barWidth: 3,
-                      dotData: const FlDotData(show: true),
-                    ),
-                    LineChartBarData(
-                      spots: nonHdlSpots,
-                      isCurved: true,
-                      color: Colors.brown,
-                      barWidth: 3,
-                      dotData: const FlDotData(show: true),
-                    ),
-                    LineChartBarData(
-                      spots: cholHdlRatioSpots,
-                      isCurved: true,
-                      color: Colors.pink,
-                      barWidth: 3,
-                      dotData: const FlDotData(show: true),
-                    ),
-                  ],
-                ),
+                  // Permanently visible data value labels for all 7 lipid values
+                  // Total Cholesterol
+                  ...totalCholesterolSpots.asMap().entries.map((entry) {
+                    final index = entry.key;
+                    final spot = entry.value;
+
+                    final xOffset = 60 +
+                        (index * 80.0) +
+                        25; // 60px left axis + index spacing + centering
+                    const yOffset =
+                        120.0; // Total Cholesterol - positioned in chart area
+
+                    return Positioned(
+                      left: xOffset,
+                      top: yOffset,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 4, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.orange.withOpacity(0.9),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          '${spot.y.toInt()}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 9,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    );
+                  }),
+                  // HDL
+                  ...hdlSpots.asMap().entries.map((entry) {
+                    final index = entry.key;
+                    final spot = entry.value;
+
+                    final xOffset = 60 +
+                        (index * 80.0) +
+                        35; // 60px left axis + index spacing + centering
+                    const yOffset = 140.0; // HDL - positioned in chart area
+
+                    return Positioned(
+                      left: xOffset,
+                      top: yOffset,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 4, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.green.withOpacity(0.9),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          '${spot.y.toInt()}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 9,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    );
+                  }),
+                  // LDL
+                  ...ldlSpots.asMap().entries.map((entry) {
+                    final index = entry.key;
+                    final spot = entry.value;
+
+                    final xOffset = 60 +
+                        (index * 80.0) +
+                        15; // 60px left axis + index spacing + centering
+                    const yOffset =
+                        160.0; // LDL - positioned closer to data points
+
+                    return Positioned(
+                      left: xOffset,
+                      top: yOffset,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 4, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.red.withOpacity(0.9),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          '${spot.y.toInt()}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 9,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    );
+                  }),
+                  // Triglycerides
+                  ...triglyceridesSpots.asMap().entries.map((entry) {
+                    final index = entry.key;
+                    final spot = entry.value;
+
+                    final xOffset = 60 +
+                        (index * 80.0) +
+                        5; // 60px left axis + index spacing + centering
+                    const yOffset =
+                        180.0; // Triglycerides - positioned in chart area
+
+                    return Positioned(
+                      left: xOffset,
+                      top: yOffset,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 4, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.purple.withOpacity(0.9),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          '${spot.y.toInt()}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 9,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    );
+                  }),
+                  // VLDL
+                  ...vldlSpots.asMap().entries.map((entry) {
+                    final index = entry.key;
+                    final spot = entry.value;
+
+                    final xOffset = 60 +
+                        (index * 80.0) +
+                        25; // 60px left axis + index spacing + centering
+                    const yOffset = 200.0; // VLDL - positioned in chart area
+
+                    return Positioned(
+                      left: xOffset,
+                      top: yOffset,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 4, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.teal.withOpacity(0.9),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          '${spot.y.toInt()}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 9,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    );
+                  }),
+                  // Non-HDL
+                  ...nonHdlSpots.asMap().entries.map((entry) {
+                    final index = entry.key;
+                    final spot = entry.value;
+
+                    final xOffset = 60 +
+                        (index * 80.0) +
+                        15; // 60px left axis + index spacing + centering
+                    const yOffset = 220.0; // Non-HDL - positioned in chart area
+
+                    return Positioned(
+                      left: xOffset,
+                      top: yOffset,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 4, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.brown.withOpacity(0.9),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          '${spot.y.toInt()}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 9,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    );
+                  }),
+                  // Chol/HDL Ratio
+                  ...cholHdlRatioSpots.asMap().entries.map((entry) {
+                    final index = entry.key;
+                    final spot = entry.value;
+
+                    final xOffset = 60 +
+                        (index * 80.0) +
+                        15; // 60px left axis + index spacing + centering
+                    const yOffset =
+                        240.0; // Chol/HDL Ratio - positioned in chart area
+
+                    return Positioned(
+                      left: xOffset,
+                      top: yOffset,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 4, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.pink.withOpacity(0.9),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          spot.y.toStringAsFixed(1),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 9,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    );
+                  }),
+                ],
               ),
             ),
           ),
