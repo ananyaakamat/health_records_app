@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../../data/models/profile.dart';
@@ -13,6 +14,8 @@ import '../../data/models/sugar_record.dart';
 import '../../data/models/bp_record.dart';
 import '../../data/models/lipid_record.dart';
 import 'package:intl/intl.dart';
+
+enum GraphType { sugar, bloodPressure, lipidProfile }
 
 class ProfileDetailScreen extends ConsumerWidget {
   final Profile profile;
@@ -474,36 +477,45 @@ class ProfileDetailScreen extends ConsumerWidget {
   Widget _buildSugarRecordTile(SugarRecord record, WidgetRef ref) {
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
-      child: ListTile(
-        leading: const CircleAvatar(
-          backgroundColor: AppTheme.primaryColor,
-          child: Icon(Icons.bloodtype, color: Colors.white),
-        ),
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+      child: Padding(
+        padding: const EdgeInsets.all(12.0),
+        child: Row(
           children: [
-            Text(
-              'HbA1c (Normal: 4-5.6%): ${record.hba1c.toStringAsFixed(1)}%',
-              style: const TextStyle(fontSize: 14),
-              overflow: TextOverflow.ellipsis,
+            // Main content area - takes most space
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'HbA1c (Normal: 4-5.6%): ${record.hba1c.toStringAsFixed(1)}%',
+                    style: const TextStyle(
+                        fontSize: 14, fontWeight: FontWeight.w500),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    DateFormat('MMM dd, yyyy').format(record.recordDate),
+                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                  ),
+                ],
+              ),
+            ),
+            // 3-dot menu on the right
+            Builder(
+              builder: (context) => PopupMenuButton<String>(
+                onSelected: (value) {
+                  if (value == 'edit') {
+                    _showSugarRecordForm(context, ref, record: record);
+                  } else if (value == 'delete') {
+                    _deleteSugarRecord(context, ref, record);
+                  }
+                },
+                itemBuilder: (context) => [
+                  const PopupMenuItem(value: 'edit', child: Text('Edit')),
+                  const PopupMenuItem(value: 'delete', child: Text('Delete')),
+                ],
+              ),
             ),
           ],
-        ),
-        subtitle: Text(DateFormat('MMM dd, yyyy').format(record.recordDate)),
-        trailing: Builder(
-          builder: (context) => PopupMenuButton<String>(
-            onSelected: (value) {
-              if (value == 'edit') {
-                _showSugarRecordForm(context, ref, record: record);
-              } else if (value == 'delete') {
-                _deleteSugarRecord(context, ref, record);
-              }
-            },
-            itemBuilder: (context) => [
-              const PopupMenuItem(value: 'edit', child: Text('Edit')),
-              const PopupMenuItem(value: 'delete', child: Text('Delete')),
-            ],
-          ),
         ),
       ),
     );
@@ -512,46 +524,49 @@ class ProfileDetailScreen extends ConsumerWidget {
   Widget _buildBPRecordTile(BPRecord record, WidgetRef ref) {
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
-      child: ListTile(
-        leading: const CircleAvatar(
-          backgroundColor: AppTheme.primaryColor,
-          child: Icon(Icons.monitor_heart, color: Colors.white),
-        ),
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Row(
           children: [
-            Text(
-              'Systolic (SBP) - mmHg (Normal: <120): ${record.systolic}',
-              style: const TextStyle(fontSize: 14),
-              overflow: TextOverflow.ellipsis,
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Systolic (SBP) - mmHg (Normal: <120): ${record.systolic}',
+                    style: const TextStyle(fontSize: 14),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Diastolic (DBP) - mmHg (Normal: <80): ${record.diastolic}',
+                    style: const TextStyle(fontSize: 14),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    DateFormat('MMM dd, yyyy').format(record.recordDate),
+                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                  ),
+                ],
+              ),
             ),
-            const SizedBox(height: 4),
-            Text(
-              'Diastolic (DBP) - mmHg (Normal: <80): ${record.diastolic}',
-              style: const TextStyle(fontSize: 14),
-              overflow: TextOverflow.ellipsis,
+            Builder(
+              builder: (context) => PopupMenuButton<String>(
+                onSelected: (value) {
+                  if (value == 'edit') {
+                    _showBPRecordForm(context, ref, record: record);
+                  } else if (value == 'delete') {
+                    _deleteBPRecord(context, ref, record);
+                  }
+                },
+                itemBuilder: (context) => [
+                  const PopupMenuItem(value: 'edit', child: Text('Edit')),
+                  const PopupMenuItem(value: 'delete', child: Text('Delete')),
+                ],
+              ),
             ),
           ],
-        ),
-        subtitle: Padding(
-          padding: const EdgeInsets.only(top: 8),
-          child: Text(DateFormat('MMM dd, yyyy').format(record.recordDate)),
-        ),
-        isThreeLine: true,
-        trailing: Builder(
-          builder: (context) => PopupMenuButton<String>(
-            onSelected: (value) {
-              if (value == 'edit') {
-                _showBPRecordForm(context, ref, record: record);
-              } else if (value == 'delete') {
-                _deleteBPRecord(context, ref, record);
-              }
-            },
-            itemBuilder: (context) => [
-              const PopupMenuItem(value: 'edit', child: Text('Edit')),
-              const PopupMenuItem(value: 'delete', child: Text('Delete')),
-            ],
-          ),
         ),
       ),
     );
@@ -560,76 +575,79 @@ class ProfileDetailScreen extends ConsumerWidget {
   Widget _buildLipidRecordTile(LipidRecord record, WidgetRef ref) {
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
-      child: ListTile(
-        leading: const CircleAvatar(
-          backgroundColor: AppTheme.primaryColor,
-          child: Icon(Icons.science, color: Colors.white),
-        ),
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Row(
           children: [
-            Text(
-              'Cholesterol Total (Normal: <200): ${record.cholesterolTotal}',
-              style: const TextStyle(fontSize: 14),
-              overflow: TextOverflow.ellipsis,
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Cholesterol Total (Normal: <200): ${record.cholesterolTotal}',
+                    style: const TextStyle(fontSize: 14),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Triglycerides (Normal: <150): ${record.triglycerides}',
+                    style: const TextStyle(fontSize: 14),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'HDL Cholesterol (Normal: 40-60): ${record.hdl}',
+                    style: const TextStyle(fontSize: 14),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Non-HDL Cholesterol (Normal: <130): ${record.nonHdl}',
+                    style: const TextStyle(fontSize: 14),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'LDL Cholesterol (Normal: 0-159): ${record.ldl}',
+                    style: const TextStyle(fontSize: 14),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'VLDL Cholesterol (Normal: 0-40): ${record.vldl}',
+                    style: const TextStyle(fontSize: 14),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Cholesterol/HDL Ratio (Normal: 0-5): ${record.cholHdlRatio}',
+                    style: const TextStyle(fontSize: 14),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    DateFormat('MMM dd, yyyy').format(record.recordDate),
+                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                  ),
+                ],
+              ),
             ),
-            const SizedBox(height: 4),
-            Text(
-              'Triglycerides (Normal: <150): ${record.triglycerides}',
-              style: const TextStyle(fontSize: 14),
-              overflow: TextOverflow.ellipsis,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'HDL Cholesterol (Normal: 40-60): ${record.hdl}',
-              style: const TextStyle(fontSize: 14),
-              overflow: TextOverflow.ellipsis,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'Non-HDL Cholesterol (Normal: <130): ${record.nonHdl}',
-              style: const TextStyle(fontSize: 14),
-              overflow: TextOverflow.ellipsis,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'LDL Cholesterol (Normal: 0-159): ${record.ldl}',
-              style: const TextStyle(fontSize: 14),
-              overflow: TextOverflow.ellipsis,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'VLDL Cholesterol (Normal: 0-40): ${record.vldl}',
-              style: const TextStyle(fontSize: 14),
-              overflow: TextOverflow.ellipsis,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'Cholesterol/HDL Ratio (Normal: 0-5): ${record.cholHdlRatio}',
-              style: const TextStyle(fontSize: 14),
-              overflow: TextOverflow.ellipsis,
+            Builder(
+              builder: (context) => PopupMenuButton<String>(
+                onSelected: (value) {
+                  if (value == 'edit') {
+                    _showLipidRecordForm(context, ref, record: record);
+                  } else if (value == 'delete') {
+                    _deleteLipidRecord(context, ref, record);
+                  }
+                },
+                itemBuilder: (context) => [
+                  const PopupMenuItem(value: 'edit', child: Text('Edit')),
+                  const PopupMenuItem(value: 'delete', child: Text('Delete')),
+                ],
+              ),
             ),
           ],
-        ),
-        subtitle: Padding(
-          padding: const EdgeInsets.only(top: 8),
-          child: Text(DateFormat('MMM dd, yyyy').format(record.recordDate)),
-        ),
-        isThreeLine: true,
-        trailing: Builder(
-          builder: (context) => PopupMenuButton<String>(
-            onSelected: (value) {
-              if (value == 'edit') {
-                _showLipidRecordForm(context, ref, record: record);
-              } else if (value == 'delete') {
-                _deleteLipidRecord(context, ref, record);
-              }
-            },
-            itemBuilder: (context) => [
-              const PopupMenuItem(value: 'edit', child: Text('Edit')),
-              const PopupMenuItem(value: 'delete', child: Text('Delete')),
-            ],
-          ),
         ),
       ),
     );
@@ -657,81 +675,99 @@ class ProfileDetailScreen extends ConsumerWidget {
               return FlSpot(entry.key.toDouble(), entry.value.hba1c);
             }).toList();
 
-            // Calculate dynamic width based on number of records
+            // Calculate dynamic width based on number of records - more spacing for better readability
             final chartWidth =
-                (sortedRecords.length * 60.0).clamp(300.0, double.infinity);
+                (sortedRecords.length * 80.0).clamp(400.0, double.infinity);
 
-            return SizedBox(
-              height: 300, // Increased height
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: SizedBox(
-                  width: chartWidth,
-                  height: 300,
-                  child: LineChart(
-                    LineChartData(
-                      gridData: const FlGridData(show: true),
-                      titlesData: FlTitlesData(
-                        leftTitles: AxisTitles(
-                          sideTitles: SideTitles(
-                            showTitles: true,
-                            reservedSize: 50,
-                            getTitlesWidget: (value, meta) {
-                              return Text(
-                                '${value.toStringAsFixed(1)}%',
-                                style: const TextStyle(fontSize: 12),
-                              );
-                            },
-                          ),
+            return GestureDetector(
+              onTap: () => _openFullScreenGraph(
+                context,
+                ref,
+                GraphType.sugar,
+                'HbA1c Levels',
+                records,
+              ),
+              child: SizedBox(
+                height: 600, // Doubled height
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: SizedBox(
+                    width: chartWidth,
+                    height: 600,
+                    child: LineChart(
+                      LineChartData(
+                        gridData: const FlGridData(
+                          show: true,
+                          drawVerticalLine: true,
+                          horizontalInterval: 1,
+                          verticalInterval: 1,
                         ),
-                        bottomTitles: AxisTitles(
-                          sideTitles: SideTitles(
-                            showTitles: true,
-                            reservedSize: 50,
-                            interval: 1,
-                            getTitlesWidget: (value, meta) {
-                              final index = value.toInt();
-                              if (index >= 0 && index < sortedRecords.length) {
-                                return Padding(
-                                  padding: const EdgeInsets.only(top: 8.0),
-                                  child: Transform.rotate(
-                                    angle: -0.5,
-                                    child: Text(
-                                      DateFormat('MM/dd').format(
-                                          sortedRecords[index].recordDate),
-                                      style: const TextStyle(fontSize: 11),
-                                    ),
-                                  ),
+                        titlesData: FlTitlesData(
+                          leftTitles: AxisTitles(
+                            sideTitles: SideTitles(
+                              showTitles: true,
+                              reservedSize: 60,
+                              getTitlesWidget: (value, meta) {
+                                return Text(
+                                  '${value.toStringAsFixed(1)}%',
+                                  style: const TextStyle(fontSize: 12),
                                 );
-                              }
-                              return const Text('');
-                            },
+                              },
+                            ),
                           ),
+                          bottomTitles: AxisTitles(
+                            sideTitles: SideTitles(
+                              showTitles: true,
+                              reservedSize:
+                                  80, // Increased reserved size to prevent truncation
+                              interval: 1,
+                              getTitlesWidget: (value, meta) {
+                                final index = value.toInt();
+                                if (index >= 0 &&
+                                    index < sortedRecords.length) {
+                                  return Padding(
+                                    padding: const EdgeInsets.only(top: 12.0),
+                                    child: Transform.rotate(
+                                      angle:
+                                          -0.4, // Slightly less rotation for better readability
+                                      child: Text(
+                                        DateFormat('MM/dd/yy').format(
+                                            // Added year for clarity
+                                            sortedRecords[index].recordDate),
+                                        style: const TextStyle(fontSize: 10),
+                                      ),
+                                    ),
+                                  );
+                                }
+                                return const Text('');
+                              },
+                            ),
+                          ),
+                          rightTitles: const AxisTitles(
+                              sideTitles: SideTitles(showTitles: false)),
+                          topTitles: const AxisTitles(
+                              sideTitles: SideTitles(showTitles: false)),
                         ),
-                        rightTitles: const AxisTitles(
-                            sideTitles: SideTitles(showTitles: false)),
-                        topTitles: const AxisTitles(
-                            sideTitles: SideTitles(showTitles: false)),
+                        borderData: FlBorderData(show: true),
+                        lineBarsData: [
+                          LineChartBarData(
+                            spots: spots,
+                            isCurved: true,
+                            color: AppTheme.primaryColor,
+                            barWidth: 3,
+                            dotData: const FlDotData(show: true),
+                            belowBarData: BarAreaData(
+                              show: true,
+                              color: AppTheme.primaryColor.withOpacity(0.2),
+                            ),
+                          ),
+                        ],
                       ),
-                      borderData: FlBorderData(show: true),
-                      lineBarsData: [
-                        LineChartBarData(
-                          spots: spots,
-                          isCurved: true,
-                          color: AppTheme.primaryColor,
-                          barWidth: 3,
-                          dotData: const FlDotData(show: true),
-                          belowBarData: BarAreaData(
-                            show: true,
-                            color: AppTheme.primaryColor.withOpacity(0.2),
-                          ),
-                        ),
-                      ],
                     ),
                   ),
                 ),
-              ),
-            );
+              ), // Close child SizedBox
+            ); // Close GestureDetector Sugar
           },
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (error, stack) => Center(child: Text('Error: $error')),
@@ -767,81 +803,122 @@ class ProfileDetailScreen extends ConsumerWidget {
                   entry.key.toDouble(), entry.value.diastolic.toDouble());
             }).toList();
 
-            return SizedBox(
-              height: 300, // Increased height
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: SizedBox(
-                  width: (sortedRecords.length * 60.0)
-                      .clamp(300.0, double.infinity),
-                  height: 300,
-                  child: LineChart(
-                    LineChartData(
-                      gridData: const FlGridData(show: true),
-                      titlesData: FlTitlesData(
-                        leftTitles: AxisTitles(
-                          sideTitles: SideTitles(
-                            showTitles: true,
-                            reservedSize: 50,
-                            getTitlesWidget: (value, meta) {
-                              return Text(
-                                '${value.toInt()}',
-                                style: const TextStyle(fontSize: 12),
-                              );
-                            },
+            // Calculate dynamic width with better spacing
+            final chartWidth =
+                (sortedRecords.length * 80.0).clamp(400.0, double.infinity);
+
+            return GestureDetector(
+              onTap: () => _openFullScreenGraph(
+                context,
+                ref,
+                GraphType.bloodPressure,
+                'Blood Pressure',
+                records,
+              ),
+              child: SizedBox(
+                height: 600, // Doubled height
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: SizedBox(
+                    width: chartWidth,
+                    height: 600,
+                    child: Column(
+                      children: [
+                        // Legend for BP readings
+                        Container(
+                          height: 40,
+                          padding: const EdgeInsets.all(8),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              _buildLegendItem('Systolic', Colors.red),
+                              const SizedBox(width: 20),
+                              _buildLegendItem('Diastolic', Colors.blue),
+                            ],
                           ),
                         ),
-                        bottomTitles: AxisTitles(
-                          sideTitles: SideTitles(
-                            showTitles: true,
-                            reservedSize: 50,
-                            interval: 1,
-                            getTitlesWidget: (value, meta) {
-                              final index = value.toInt();
-                              if (index >= 0 && index < sortedRecords.length) {
-                                return Padding(
-                                  padding: const EdgeInsets.only(top: 8.0),
-                                  child: Transform.rotate(
-                                    angle: -0.5,
-                                    child: Text(
-                                      DateFormat('MM/dd').format(
-                                          sortedRecords[index].recordDate),
-                                      style: const TextStyle(fontSize: 11),
-                                    ),
+                        // Chart
+                        Expanded(
+                          child: LineChart(
+                            LineChartData(
+                              gridData: const FlGridData(
+                                show: true,
+                                drawVerticalLine: true,
+                                horizontalInterval: 10,
+                                verticalInterval: 1,
+                              ),
+                              titlesData: FlTitlesData(
+                                leftTitles: AxisTitles(
+                                  sideTitles: SideTitles(
+                                    showTitles: true,
+                                    reservedSize: 60,
+                                    getTitlesWidget: (value, meta) {
+                                      return Text(
+                                        '${value.toInt()}',
+                                        style: const TextStyle(fontSize: 12),
+                                      );
+                                    },
                                   ),
-                                );
-                              }
-                              return const Text('');
-                            },
+                                ),
+                                bottomTitles: AxisTitles(
+                                  sideTitles: SideTitles(
+                                    showTitles: true,
+                                    reservedSize: 80, // Increased reserved size
+                                    interval: 1,
+                                    getTitlesWidget: (value, meta) {
+                                      final index = value.toInt();
+                                      if (index >= 0 &&
+                                          index < sortedRecords.length) {
+                                        return Padding(
+                                          padding:
+                                              const EdgeInsets.only(top: 12.0),
+                                          child: Transform.rotate(
+                                            angle: -0.4,
+                                            child: Text(
+                                              DateFormat('MM/dd/yy').format(
+                                                  sortedRecords[index]
+                                                      .recordDate),
+                                              style:
+                                                  const TextStyle(fontSize: 10),
+                                            ),
+                                          ),
+                                        );
+                                      }
+                                      return const Text('');
+                                    },
+                                  ),
+                                ),
+                                rightTitles: const AxisTitles(
+                                    sideTitles: SideTitles(showTitles: false)),
+                                topTitles: const AxisTitles(
+                                    sideTitles: SideTitles(showTitles: false)),
+                              ),
+                              borderData: FlBorderData(show: true),
+                              lineBarsData: [
+                                LineChartBarData(
+                                  spots: systolicSpots,
+                                  isCurved: true,
+                                  color: Colors.red,
+                                  barWidth: 3,
+                                  dotData: const FlDotData(show: true),
+                                ),
+                                LineChartBarData(
+                                  spots: diastolicSpots,
+                                  isCurved: true,
+                                  color: Colors.blue,
+                                  barWidth: 3,
+                                  dotData: const FlDotData(show: true),
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                        rightTitles: const AxisTitles(
-                            sideTitles: SideTitles(showTitles: false)),
-                        topTitles: const AxisTitles(
-                            sideTitles: SideTitles(showTitles: false)),
-                      ),
-                      borderData: FlBorderData(show: true),
-                      lineBarsData: [
-                        LineChartBarData(
-                          spots: systolicSpots,
-                          isCurved: true,
-                          color: Colors.red,
-                          barWidth: 3,
-                          dotData: const FlDotData(show: true),
-                        ),
-                        LineChartBarData(
-                          spots: diastolicSpots,
-                          isCurved: true,
-                          color: Colors.blue,
-                          barWidth: 3,
-                          dotData: const FlDotData(show: true),
                         ),
                       ],
                     ),
                   ),
                 ),
-              ),
-            );
+              ), // Close child SizedBox
+            ); // Close GestureDetector BP
           },
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (error, stack) => Center(child: Text('Error: $error')),
@@ -902,145 +979,176 @@ class ProfileDetailScreen extends ConsumerWidget {
               return FlSpot(entry.key.toDouble(), entry.value.cholHdlRatio);
             }).toList();
 
-            return SizedBox(
-              height: 350, // Increased height for all 7 parameters
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: SizedBox(
-                  width: (sortedRecords.length * 60.0)
-                      .clamp(300.0, double.infinity),
-                  height: 350,
-                  child: Column(
-                    children: [
-                      // Legend for all 7 parameters
-                      Container(
-                        height: 50,
-                        padding: const EdgeInsets.all(8),
-                        child: Wrap(
-                          alignment: WrapAlignment.center,
-                          spacing: 8,
-                          children: [
-                            _buildLegendItem('Total Chol', Colors.orange),
-                            _buildLegendItem('HDL', Colors.green),
-                            _buildLegendItem('LDL', Colors.red),
-                            _buildLegendItem('Triglycerides', Colors.purple),
-                            _buildLegendItem('VLDL', Colors.teal),
-                            _buildLegendItem('Non-HDL', Colors.brown),
-                            _buildLegendItem('Chol/HDL Ratio', Colors.pink),
-                          ],
-                        ),
-                      ),
-                      // Chart
-                      Expanded(
-                        child: LineChart(
-                          LineChartData(
-                            gridData: const FlGridData(show: true),
-                            titlesData: FlTitlesData(
-                              leftTitles: AxisTitles(
-                                sideTitles: SideTitles(
-                                  showTitles: true,
-                                  reservedSize: 50,
-                                  getTitlesWidget: (value, meta) {
-                                    return Text(
-                                      '${value.toInt()}',
-                                      style: const TextStyle(fontSize: 12),
-                                    );
-                                  },
-                                ),
+            // Calculate dynamic width with more spacing for lipid graph
+            final chartWidth =
+                (sortedRecords.length * 100.0).clamp(500.0, double.infinity);
+
+            return GestureDetector(
+              onTap: () => _openFullScreenGraph(
+                context,
+                ref,
+                GraphType.lipidProfile,
+                'Lipid Profile',
+                records,
+              ),
+              child: SizedBox(
+                height: 700, // Doubled height from 350 to 700
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: SizedBox(
+                    width: chartWidth,
+                    height: 700,
+                    child: Column(
+                      children: [
+                        // Legend for all 7 parameters - split into two rows to reduce clutter
+                        Container(
+                          height: 80,
+                          padding: const EdgeInsets.all(8),
+                          child: Column(
+                            children: [
+                              Wrap(
+                                alignment: WrapAlignment.center,
+                                spacing: 12,
+                                children: [
+                                  _buildLegendItem('Total Chol', Colors.orange),
+                                  _buildLegendItem('HDL', Colors.green),
+                                  _buildLegendItem('LDL', Colors.red),
+                                  _buildLegendItem(
+                                      'Triglycerides', Colors.purple),
+                                ],
                               ),
-                              bottomTitles: AxisTitles(
-                                sideTitles: SideTitles(
-                                  showTitles: true,
-                                  reservedSize: 50,
-                                  interval: 1,
-                                  getTitlesWidget: (value, meta) {
-                                    final index = value.toInt();
-                                    if (index >= 0 &&
-                                        index < sortedRecords.length) {
-                                      return Padding(
-                                        padding:
-                                            const EdgeInsets.only(top: 8.0),
-                                        child: Transform.rotate(
-                                          angle: -0.5,
-                                          child: Text(
-                                            DateFormat('MM/dd').format(
-                                                sortedRecords[index]
-                                                    .recordDate),
-                                            style:
-                                                const TextStyle(fontSize: 11),
-                                          ),
-                                        ),
-                                      );
-                                    }
-                                    return const Text('');
-                                  },
-                                ),
-                              ),
-                              rightTitles: const AxisTitles(
-                                  sideTitles: SideTitles(showTitles: false)),
-                              topTitles: const AxisTitles(
-                                  sideTitles: SideTitles(showTitles: false)),
-                            ),
-                            borderData: FlBorderData(show: true),
-                            lineBarsData: [
-                              LineChartBarData(
-                                spots: totalCholesterolSpots,
-                                isCurved: true,
-                                color: Colors.orange,
-                                barWidth: 2.5,
-                                dotData: const FlDotData(show: true),
-                              ),
-                              LineChartBarData(
-                                spots: hdlSpots,
-                                isCurved: true,
-                                color: Colors.green,
-                                barWidth: 2.5,
-                                dotData: const FlDotData(show: true),
-                              ),
-                              LineChartBarData(
-                                spots: ldlSpots,
-                                isCurved: true,
-                                color: Colors.red,
-                                barWidth: 2.5,
-                                dotData: const FlDotData(show: true),
-                              ),
-                              LineChartBarData(
-                                spots: triglyceridesSpots,
-                                isCurved: true,
-                                color: Colors.purple,
-                                barWidth: 2.5,
-                                dotData: const FlDotData(show: true),
-                              ),
-                              LineChartBarData(
-                                spots: vldlSpots,
-                                isCurved: true,
-                                color: Colors.teal,
-                                barWidth: 2.5,
-                                dotData: const FlDotData(show: true),
-                              ),
-                              LineChartBarData(
-                                spots: nonHdlSpots,
-                                isCurved: true,
-                                color: Colors.brown,
-                                barWidth: 2.5,
-                                dotData: const FlDotData(show: true),
-                              ),
-                              LineChartBarData(
-                                spots: cholHdlRatioSpots,
-                                isCurved: true,
-                                color: Colors.pink,
-                                barWidth: 2.5,
-                                dotData: const FlDotData(show: true),
+                              const SizedBox(height: 8),
+                              Wrap(
+                                alignment: WrapAlignment.center,
+                                spacing: 12,
+                                children: [
+                                  _buildLegendItem('VLDL', Colors.teal),
+                                  _buildLegendItem('Non-HDL', Colors.brown),
+                                  _buildLegendItem(
+                                      'Chol/HDL Ratio', Colors.pink),
+                                ],
                               ),
                             ],
                           ),
                         ),
-                      ),
-                    ],
+                        // Chart
+                        Expanded(
+                          child: LineChart(
+                            LineChartData(
+                              gridData: const FlGridData(
+                                show: true,
+                                drawVerticalLine: true,
+                                horizontalInterval:
+                                    20, // Increased interval for less cluttered grid
+                                verticalInterval: 1,
+                              ),
+                              titlesData: FlTitlesData(
+                                leftTitles: AxisTitles(
+                                  sideTitles: SideTitles(
+                                    showTitles: true,
+                                    reservedSize: 60,
+                                    getTitlesWidget: (value, meta) {
+                                      return Text(
+                                        '${value.toInt()}',
+                                        style: const TextStyle(fontSize: 12),
+                                      );
+                                    },
+                                  ),
+                                ),
+                                bottomTitles: AxisTitles(
+                                  sideTitles: SideTitles(
+                                    showTitles: true,
+                                    reservedSize: 80, // Increased reserved size
+                                    interval: 1,
+                                    getTitlesWidget: (value, meta) {
+                                      final index = value.toInt();
+                                      if (index >= 0 &&
+                                          index < sortedRecords.length) {
+                                        return Padding(
+                                          padding:
+                                              const EdgeInsets.only(top: 12.0),
+                                          child: Transform.rotate(
+                                            angle: -0.4,
+                                            child: Text(
+                                              DateFormat('MM/dd/yy').format(
+                                                  sortedRecords[index]
+                                                      .recordDate),
+                                              style:
+                                                  const TextStyle(fontSize: 10),
+                                            ),
+                                          ),
+                                        );
+                                      }
+                                      return const Text('');
+                                    },
+                                  ),
+                                ),
+                                rightTitles: const AxisTitles(
+                                    sideTitles: SideTitles(showTitles: false)),
+                                topTitles: const AxisTitles(
+                                    sideTitles: SideTitles(showTitles: false)),
+                              ),
+                              borderData: FlBorderData(show: true),
+                              lineBarsData: [
+                                LineChartBarData(
+                                  spots: totalCholesterolSpots,
+                                  isCurved: true,
+                                  color: Colors.orange,
+                                  barWidth: 2,
+                                  dotData: const FlDotData(show: true),
+                                ),
+                                LineChartBarData(
+                                  spots: hdlSpots,
+                                  isCurved: true,
+                                  color: Colors.green,
+                                  barWidth: 2,
+                                  dotData: const FlDotData(show: true),
+                                ),
+                                LineChartBarData(
+                                  spots: ldlSpots,
+                                  isCurved: true,
+                                  color: Colors.red,
+                                  barWidth: 2,
+                                  dotData: const FlDotData(show: true),
+                                ),
+                                LineChartBarData(
+                                  spots: triglyceridesSpots,
+                                  isCurved: true,
+                                  color: Colors.purple,
+                                  barWidth: 2,
+                                  dotData: const FlDotData(show: true),
+                                ),
+                                LineChartBarData(
+                                  spots: vldlSpots,
+                                  isCurved: true,
+                                  color: Colors.teal,
+                                  barWidth: 2,
+                                  dotData: const FlDotData(show: true),
+                                ),
+                                LineChartBarData(
+                                  spots: nonHdlSpots,
+                                  isCurved: true,
+                                  color: Colors.brown,
+                                  barWidth: 2,
+                                  dotData: const FlDotData(show: true),
+                                ),
+                                LineChartBarData(
+                                  spots: cholHdlRatioSpots,
+                                  isCurved: true,
+                                  color: Colors.pink,
+                                  barWidth: 2,
+                                  dotData: const FlDotData(show: true),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            );
+              ), // Close child SizedBox
+            ); // Close GestureDetector Lipid
           },
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (error, stack) => Center(child: Text('Error: $error')),
@@ -1265,6 +1373,26 @@ class ProfileDetailScreen extends ConsumerWidget {
     );
   }
 
+  void _openFullScreenGraph(
+    BuildContext context,
+    WidgetRef ref,
+    GraphType graphType,
+    String title,
+    List<dynamic> records,
+  ) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => FullScreenGraphScreen(
+          profile: profile,
+          graphType: graphType,
+          title: title,
+          records: records,
+        ),
+      ),
+    );
+  }
+
   Widget _buildLegendItem(String label, Color color) {
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -1281,6 +1409,479 @@ class ProfileDetailScreen extends ConsumerWidget {
         Text(
           label,
           style: const TextStyle(fontSize: 10),
+        ),
+      ],
+    );
+  }
+}
+
+class FullScreenGraphScreen extends ConsumerStatefulWidget {
+  final Profile profile;
+  final GraphType graphType;
+  final String title;
+  final List<dynamic> records;
+
+  const FullScreenGraphScreen({
+    super.key,
+    required this.profile,
+    required this.graphType,
+    required this.title,
+    required this.records,
+  });
+
+  @override
+  ConsumerState<FullScreenGraphScreen> createState() =>
+      _FullScreenGraphScreenState();
+}
+
+class _FullScreenGraphScreenState extends ConsumerState<FullScreenGraphScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Switch to landscape mode
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]);
+  }
+
+  @override
+  void dispose() {
+    // Switch back to portrait mode when leaving the screen
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+    ]);
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('${widget.title} - ${widget.profile.name}'),
+        centerTitle: true,
+        leading: IconButton(
+          icon: const Icon(Icons.close),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: _buildFullScreenGraph(),
+      ),
+    );
+  }
+
+  Widget _buildFullScreenGraph() {
+    switch (widget.graphType) {
+      case GraphType.sugar:
+        return _buildFullScreenSugarGraph();
+      case GraphType.bloodPressure:
+        return _buildFullScreenBPGraph();
+      case GraphType.lipidProfile:
+        return _buildFullScreenLipidGraph();
+    }
+  }
+
+  Widget _buildFullScreenSugarGraph() {
+    final records = widget.records.cast<SugarRecord>();
+
+    if (records.isEmpty) {
+      return const Center(
+        child: Text('No HbA1c data available', style: TextStyle(fontSize: 18)),
+      );
+    }
+
+    // Sort records by date
+    final sortedRecords = List<SugarRecord>.from(records)
+      ..sort((a, b) => a.recordDate.compareTo(b.recordDate));
+
+    final spots = sortedRecords.asMap().entries.map((entry) {
+      return FlSpot(entry.key.toDouble(), entry.value.hba1c);
+    }).toList();
+
+    return LineChart(
+      LineChartData(
+        gridData: const FlGridData(
+          show: true,
+          drawVerticalLine: true,
+          horizontalInterval: 0.5,
+          verticalInterval: 1,
+        ),
+        titlesData: FlTitlesData(
+          leftTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              reservedSize: 60,
+              getTitlesWidget: (value, meta) {
+                return Text(
+                  '${value.toStringAsFixed(1)}%',
+                  style: const TextStyle(fontSize: 14),
+                );
+              },
+            ),
+          ),
+          bottomTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              reservedSize: 60,
+              interval: 1,
+              getTitlesWidget: (value, meta) {
+                final index = value.toInt();
+                if (index >= 0 && index < sortedRecords.length) {
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 8.0),
+                    child: Transform.rotate(
+                      angle: -0.3,
+                      child: Text(
+                        DateFormat('MM/dd/yy')
+                            .format(sortedRecords[index].recordDate),
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                    ),
+                  );
+                }
+                return const Text('');
+              },
+            ),
+          ),
+          rightTitles:
+              const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          topTitles:
+              const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+        ),
+        borderData: FlBorderData(show: true),
+        lineBarsData: [
+          LineChartBarData(
+            spots: spots,
+            isCurved: true,
+            color: AppTheme.primaryColor,
+            barWidth: 4,
+            dotData: const FlDotData(show: true),
+            belowBarData: BarAreaData(
+              show: true,
+              color: AppTheme.primaryColor.withOpacity(0.2),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFullScreenBPGraph() {
+    final records = widget.records.cast<BPRecord>();
+
+    if (records.isEmpty) {
+      return const Center(
+        child: Text('No Blood Pressure data available',
+            style: TextStyle(fontSize: 18)),
+      );
+    }
+
+    // Sort records by date
+    final sortedRecords = List<BPRecord>.from(records)
+      ..sort((a, b) => a.recordDate.compareTo(b.recordDate));
+
+    final systolicSpots = sortedRecords.asMap().entries.map((entry) {
+      return FlSpot(entry.key.toDouble(), entry.value.systolic.toDouble());
+    }).toList();
+
+    final diastolicSpots = sortedRecords.asMap().entries.map((entry) {
+      return FlSpot(entry.key.toDouble(), entry.value.diastolic.toDouble());
+    }).toList();
+
+    return Column(
+      children: [
+        // Legend
+        Container(
+          height: 50,
+          padding: const EdgeInsets.all(8),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _buildLegendItem('Systolic', Colors.red),
+              const SizedBox(width: 30),
+              _buildLegendItem('Diastolic', Colors.blue),
+            ],
+          ),
+        ),
+        // Chart
+        Expanded(
+          child: LineChart(
+            LineChartData(
+              gridData: const FlGridData(
+                show: true,
+                drawVerticalLine: true,
+                horizontalInterval: 10,
+                verticalInterval: 1,
+              ),
+              titlesData: FlTitlesData(
+                leftTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    reservedSize: 60,
+                    getTitlesWidget: (value, meta) {
+                      return Text(
+                        '${value.toInt()}',
+                        style: const TextStyle(fontSize: 14),
+                      );
+                    },
+                  ),
+                ),
+                bottomTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    reservedSize: 60,
+                    interval: 1,
+                    getTitlesWidget: (value, meta) {
+                      final index = value.toInt();
+                      if (index >= 0 && index < sortedRecords.length) {
+                        return Padding(
+                          padding: const EdgeInsets.only(top: 8.0),
+                          child: Transform.rotate(
+                            angle: -0.3,
+                            child: Text(
+                              DateFormat('MM/dd/yy')
+                                  .format(sortedRecords[index].recordDate),
+                              style: const TextStyle(fontSize: 12),
+                            ),
+                          ),
+                        );
+                      }
+                      return const Text('');
+                    },
+                  ),
+                ),
+                rightTitles:
+                    const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                topTitles:
+                    const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              ),
+              borderData: FlBorderData(show: true),
+              lineBarsData: [
+                LineChartBarData(
+                  spots: systolicSpots,
+                  isCurved: true,
+                  color: Colors.red,
+                  barWidth: 4,
+                  dotData: const FlDotData(show: true),
+                ),
+                LineChartBarData(
+                  spots: diastolicSpots,
+                  isCurved: true,
+                  color: Colors.blue,
+                  barWidth: 4,
+                  dotData: const FlDotData(show: true),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFullScreenLipidGraph() {
+    final records = widget.records.cast<LipidRecord>();
+
+    if (records.isEmpty) {
+      return const Center(
+        child: Text('No Lipid Profile data available',
+            style: TextStyle(fontSize: 18)),
+      );
+    }
+
+    // Sort records by date
+    final sortedRecords = List<LipidRecord>.from(records)
+      ..sort((a, b) => a.recordDate.compareTo(b.recordDate));
+
+    final totalCholesterolSpots = sortedRecords.asMap().entries.map((entry) {
+      return FlSpot(
+          entry.key.toDouble(), entry.value.cholesterolTotal.toDouble());
+    }).toList();
+
+    final hdlSpots = sortedRecords.asMap().entries.map((entry) {
+      return FlSpot(entry.key.toDouble(), entry.value.hdl.toDouble());
+    }).toList();
+
+    final ldlSpots = sortedRecords.asMap().entries.map((entry) {
+      return FlSpot(entry.key.toDouble(), entry.value.ldl.toDouble());
+    }).toList();
+
+    final triglyceridesSpots = sortedRecords.asMap().entries.map((entry) {
+      return FlSpot(entry.key.toDouble(), entry.value.triglycerides.toDouble());
+    }).toList();
+
+    final vldlSpots = sortedRecords.asMap().entries.map((entry) {
+      return FlSpot(entry.key.toDouble(), entry.value.vldl.toDouble());
+    }).toList();
+
+    final nonHdlSpots = sortedRecords.asMap().entries.map((entry) {
+      return FlSpot(entry.key.toDouble(), entry.value.nonHdl.toDouble());
+    }).toList();
+
+    final cholHdlRatioSpots = sortedRecords.asMap().entries.map((entry) {
+      return FlSpot(entry.key.toDouble(), entry.value.cholHdlRatio);
+    }).toList();
+
+    return Column(
+      children: [
+        // Legend for all 7 parameters - optimized for landscape
+        Container(
+          height: 80,
+          padding: const EdgeInsets.all(8),
+          child: Column(
+            children: [
+              Wrap(
+                alignment: WrapAlignment.center,
+                spacing: 20,
+                children: [
+                  _buildLegendItem('Total Chol', Colors.orange),
+                  _buildLegendItem('HDL', Colors.green),
+                  _buildLegendItem('LDL', Colors.red),
+                  _buildLegendItem('Triglycerides', Colors.purple),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Wrap(
+                alignment: WrapAlignment.center,
+                spacing: 20,
+                children: [
+                  _buildLegendItem('VLDL', Colors.teal),
+                  _buildLegendItem('Non-HDL', Colors.brown),
+                  _buildLegendItem('Chol/HDL Ratio', Colors.pink),
+                ],
+              ),
+            ],
+          ),
+        ),
+        // Chart
+        Expanded(
+          child: LineChart(
+            LineChartData(
+              gridData: const FlGridData(
+                show: true,
+                drawVerticalLine: true,
+                horizontalInterval: 20,
+                verticalInterval: 1,
+              ),
+              titlesData: FlTitlesData(
+                leftTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    reservedSize: 60,
+                    getTitlesWidget: (value, meta) {
+                      return Text(
+                        '${value.toInt()}',
+                        style: const TextStyle(fontSize: 14),
+                      );
+                    },
+                  ),
+                ),
+                bottomTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    reservedSize: 60,
+                    interval: 1,
+                    getTitlesWidget: (value, meta) {
+                      final index = value.toInt();
+                      if (index >= 0 && index < sortedRecords.length) {
+                        return Padding(
+                          padding: const EdgeInsets.only(top: 8.0),
+                          child: Transform.rotate(
+                            angle: -0.3,
+                            child: Text(
+                              DateFormat('MM/dd/yy')
+                                  .format(sortedRecords[index].recordDate),
+                              style: const TextStyle(fontSize: 12),
+                            ),
+                          ),
+                        );
+                      }
+                      return const Text('');
+                    },
+                  ),
+                ),
+                rightTitles:
+                    const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                topTitles:
+                    const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              ),
+              borderData: FlBorderData(show: true),
+              lineBarsData: [
+                LineChartBarData(
+                  spots: totalCholesterolSpots,
+                  isCurved: true,
+                  color: Colors.orange,
+                  barWidth: 3,
+                  dotData: const FlDotData(show: true),
+                ),
+                LineChartBarData(
+                  spots: hdlSpots,
+                  isCurved: true,
+                  color: Colors.green,
+                  barWidth: 3,
+                  dotData: const FlDotData(show: true),
+                ),
+                LineChartBarData(
+                  spots: ldlSpots,
+                  isCurved: true,
+                  color: Colors.red,
+                  barWidth: 3,
+                  dotData: const FlDotData(show: true),
+                ),
+                LineChartBarData(
+                  spots: triglyceridesSpots,
+                  isCurved: true,
+                  color: Colors.purple,
+                  barWidth: 3,
+                  dotData: const FlDotData(show: true),
+                ),
+                LineChartBarData(
+                  spots: vldlSpots,
+                  isCurved: true,
+                  color: Colors.teal,
+                  barWidth: 3,
+                  dotData: const FlDotData(show: true),
+                ),
+                LineChartBarData(
+                  spots: nonHdlSpots,
+                  isCurved: true,
+                  color: Colors.brown,
+                  barWidth: 3,
+                  dotData: const FlDotData(show: true),
+                ),
+                LineChartBarData(
+                  spots: cholHdlRatioSpots,
+                  isCurved: true,
+                  color: Colors.pink,
+                  barWidth: 3,
+                  dotData: const FlDotData(show: true),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLegendItem(String label, Color color) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 14,
+          height: 14,
+          decoration: BoxDecoration(
+            color: color,
+            shape: BoxShape.circle,
+          ),
+        ),
+        const SizedBox(width: 6),
+        Text(
+          label,
+          style: const TextStyle(fontSize: 12),
         ),
       ],
     );
