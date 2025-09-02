@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:fl_chart/fl_chart.dart';
 import '../../data/models/profile.dart';
 import '../../core/themes/app_theme.dart';
 import '../providers/sugar_record_provider.dart';
@@ -48,7 +49,17 @@ class ProfileDetailScreen extends ConsumerWidget {
     return Container(
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(24),
-      decoration: AppTheme.cardDecoration,
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
       child: Column(
         children: [
           // Profile Avatar
@@ -152,7 +163,7 @@ class ProfileDetailScreen extends ConsumerWidget {
             // Tab Bar
             Container(
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: Theme.of(context).colorScheme.surface,
                 borderRadius:
                     const BorderRadius.vertical(top: Radius.circular(12)),
                 boxShadow: [
@@ -187,9 +198,9 @@ class ProfileDetailScreen extends ConsumerWidget {
 
             // Tab Views
             Container(
-              height: 400,
+              height: 600, // Increased height to accommodate graphs
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: Theme.of(context).colorScheme.surface,
                 borderRadius:
                     const BorderRadius.vertical(bottom: Radius.circular(12)),
                 boxShadow: [
@@ -221,11 +232,48 @@ class ProfileDetailScreen extends ConsumerWidget {
             ref.watch(sugarRecordNotifierProvider(profile.id!));
 
         return sugarRecordsAsync.when(
-          data: (records) => _buildRecordsList(
-            records: records,
-            recordType: 'Sugar',
-            onAddRecord: () => _showSugarRecordForm(context, ref),
-            recordBuilder: (record) => _buildSugarRecordTile(record, ref),
+          data: (records) => Column(
+            children: [
+              // Graph Section for Sugar
+              Container(
+                height: 200,
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.show_chart,
+                            color: AppTheme.primaryColor),
+                        const SizedBox(width: 8),
+                        Text(
+                          'HbA1c Trend',
+                          style:
+                              Theme.of(context).textTheme.titleSmall?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Expanded(child: _buildSugarGraph(ref)),
+                  ],
+                ),
+              ),
+
+              // Divider
+              const Divider(height: 1),
+
+              // Records List Section
+              Expanded(
+                child: _buildRecordsList(
+                  records: records,
+                  recordType: 'Sugar',
+                  onAddRecord: () => _showSugarRecordForm(context, ref),
+                  recordBuilder: (record) => _buildSugarRecordTile(record, ref),
+                ),
+              ),
+            ],
           ),
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (error, stack) => Center(child: Text('Error: $error')),
@@ -240,11 +288,48 @@ class ProfileDetailScreen extends ConsumerWidget {
         final bpRecordsAsync = ref.watch(bpRecordNotifierProvider(profile.id!));
 
         return bpRecordsAsync.when(
-          data: (records) => _buildRecordsList(
-            records: records,
-            recordType: 'Blood Pressure',
-            onAddRecord: () => _showBPRecordForm(context, ref),
-            recordBuilder: (record) => _buildBPRecordTile(record, ref),
+          data: (records) => Column(
+            children: [
+              // Graph Section for BP
+              Container(
+                height: 200,
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.show_chart,
+                            color: AppTheme.primaryColor),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Blood Pressure Trend',
+                          style:
+                              Theme.of(context).textTheme.titleSmall?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Expanded(child: _buildBPGraph(ref)),
+                  ],
+                ),
+              ),
+
+              // Divider
+              const Divider(height: 1),
+
+              // Records List Section
+              Expanded(
+                child: _buildRecordsList(
+                  records: records,
+                  recordType: 'Blood Pressure',
+                  onAddRecord: () => _showBPRecordForm(context, ref),
+                  recordBuilder: (record) => _buildBPRecordTile(record, ref),
+                ),
+              ),
+            ],
           ),
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (error, stack) => Center(child: Text('Error: $error')),
@@ -260,11 +345,48 @@ class ProfileDetailScreen extends ConsumerWidget {
             ref.watch(lipidRecordNotifierProvider(profile.id!));
 
         return lipidRecordsAsync.when(
-          data: (records) => _buildRecordsList(
-            records: records,
-            recordType: 'Lipid Profile',
-            onAddRecord: () => _showLipidRecordForm(context, ref),
-            recordBuilder: (record) => _buildLipidRecordTile(record, ref),
+          data: (records) => Column(
+            children: [
+              // Graph Section for Lipid
+              Container(
+                height: 200,
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.show_chart,
+                            color: AppTheme.primaryColor),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Lipid Profile Trend',
+                          style:
+                              Theme.of(context).textTheme.titleSmall?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Expanded(child: _buildLipidGraph(ref)),
+                  ],
+                ),
+              ),
+
+              // Divider
+              const Divider(height: 1),
+
+              // Records List Section
+              Expanded(
+                child: _buildRecordsList(
+                  records: records,
+                  recordType: 'Lipid Profile',
+                  onAddRecord: () => _showLipidRecordForm(context, ref),
+                  recordBuilder: (record) => _buildLipidRecordTile(record, ref),
+                ),
+              ),
+            ],
           ),
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (error, stack) => Center(child: Text('Error: $error')),
@@ -357,7 +479,14 @@ class ProfileDetailScreen extends ConsumerWidget {
           backgroundColor: AppTheme.primaryColor,
           child: Icon(Icons.bloodtype, color: Colors.white),
         ),
-        title: Text('HbA1c: ${record.hba1c.toStringAsFixed(1)}%'),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'HbA1c (Normal: 4-5.6%): ${record.hba1c.toStringAsFixed(1)}%',
+            ),
+          ],
+        ),
         subtitle: Text(DateFormat('MMM dd, yyyy').format(record.recordDate)),
         trailing: Builder(
           builder: (context) => PopupMenuButton<String>(
@@ -386,8 +515,23 @@ class ProfileDetailScreen extends ConsumerWidget {
           backgroundColor: AppTheme.primaryColor,
           child: Icon(Icons.monitor_heart, color: Colors.white),
         ),
-        title: Text('${record.systolic}/${record.diastolic} mmHg'),
-        subtitle: Text(DateFormat('MMM dd, yyyy').format(record.recordDate)),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Systolic (SBP) - mmHg (Normal: <120): ${record.systolic}',
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Diastolic (DBP) - mmHg (Normal: <80): ${record.diastolic}',
+            ),
+          ],
+        ),
+        subtitle: Padding(
+          padding: const EdgeInsets.only(top: 8),
+          child: Text(DateFormat('MMM dd, yyyy').format(record.recordDate)),
+        ),
+        isThreeLine: true,
         trailing: Builder(
           builder: (context) => PopupMenuButton<String>(
             onSelected: (value) {
@@ -415,13 +559,28 @@ class ProfileDetailScreen extends ConsumerWidget {
           backgroundColor: AppTheme.primaryColor,
           child: Icon(Icons.science, color: Colors.white),
         ),
-        title: Text('Total: ${record.cholesterolTotal} mg/dL'),
-        subtitle: Column(
+        title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('HDL: ${record.hdl}, LDL: ${record.ldl}'),
-            Text(DateFormat('MMM dd, yyyy').format(record.recordDate)),
+            Text(
+                'Cholesterol Total (Normal: <200): ${record.cholesterolTotal}'),
+            const SizedBox(height: 4),
+            Text('Triglycerides (Normal: <150): ${record.triglycerides}'),
+            const SizedBox(height: 4),
+            Text('HDL Cholesterol (Normal: 40-60): ${record.hdl}'),
+            const SizedBox(height: 4),
+            Text('Non-HDL Cholesterol (Normal: <130): ${record.nonHdl}'),
+            const SizedBox(height: 4),
+            Text('LDL Cholesterol (Normal: 0-159): ${record.ldl}'),
+            const SizedBox(height: 4),
+            Text('VLDL Cholesterol (Normal: 0-40): ${record.vldl}'),
+            const SizedBox(height: 4),
+            Text('Cholesterol/HDL Ratio (Normal: 0-5): ${record.cholHdlRatio}'),
           ],
+        ),
+        subtitle: Padding(
+          padding: const EdgeInsets.only(top: 8),
+          child: Text(DateFormat('MMM dd, yyyy').format(record.recordDate)),
         ),
         isThreeLine: true,
         trailing: Builder(
@@ -440,6 +599,277 @@ class ProfileDetailScreen extends ConsumerWidget {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildSugarGraph(WidgetRef ref) {
+    return Consumer(
+      builder: (context, ref, child) {
+        final sugarRecordsAsync =
+            ref.watch(sugarRecordNotifierProvider(profile.id!));
+
+        return sugarRecordsAsync.when(
+          data: (records) {
+            if (records.isEmpty) {
+              return const Center(
+                child: Text('No HbA1c data available'),
+              );
+            }
+
+            // Sort records by date
+            final sortedRecords = List<SugarRecord>.from(records)
+              ..sort((a, b) => a.recordDate.compareTo(b.recordDate));
+
+            final spots = sortedRecords.asMap().entries.map((entry) {
+              return FlSpot(entry.key.toDouble(), entry.value.hba1c);
+            }).toList();
+
+            return LineChart(
+              LineChartData(
+                gridData: const FlGridData(show: true),
+                titlesData: FlTitlesData(
+                  leftTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      reservedSize: 40,
+                      getTitlesWidget: (value, meta) {
+                        return Text('${value.toStringAsFixed(1)}%');
+                      },
+                    ),
+                  ),
+                  bottomTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      reservedSize: 30,
+                      getTitlesWidget: (value, meta) {
+                        final index = value.toInt();
+                        if (index >= 0 && index < sortedRecords.length) {
+                          return Text(
+                            DateFormat('MM/dd')
+                                .format(sortedRecords[index].recordDate),
+                            style: const TextStyle(fontSize: 10),
+                          );
+                        }
+                        return const Text('');
+                      },
+                    ),
+                  ),
+                  rightTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false)),
+                  topTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false)),
+                ),
+                borderData: FlBorderData(show: true),
+                lineBarsData: [
+                  LineChartBarData(
+                    spots: spots,
+                    isCurved: true,
+                    color: AppTheme.primaryColor,
+                    barWidth: 3,
+                    dotData: const FlDotData(show: true),
+                    belowBarData: BarAreaData(
+                      show: true,
+                      color: AppTheme.primaryColor.withOpacity(0.2),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (error, stack) => Center(child: Text('Error: $error')),
+        );
+      },
+    );
+  }
+
+  Widget _buildBPGraph(WidgetRef ref) {
+    return Consumer(
+      builder: (context, ref, child) {
+        final bpRecordsAsync = ref.watch(bpRecordNotifierProvider(profile.id!));
+
+        return bpRecordsAsync.when(
+          data: (records) {
+            if (records.isEmpty) {
+              return const Center(
+                child: Text('No Blood Pressure data available'),
+              );
+            }
+
+            // Sort records by date
+            final sortedRecords = List<BPRecord>.from(records)
+              ..sort((a, b) => a.recordDate.compareTo(b.recordDate));
+
+            final systolicSpots = sortedRecords.asMap().entries.map((entry) {
+              return FlSpot(
+                  entry.key.toDouble(), entry.value.systolic.toDouble());
+            }).toList();
+
+            final diastolicSpots = sortedRecords.asMap().entries.map((entry) {
+              return FlSpot(
+                  entry.key.toDouble(), entry.value.diastolic.toDouble());
+            }).toList();
+
+            return LineChart(
+              LineChartData(
+                gridData: const FlGridData(show: true),
+                titlesData: FlTitlesData(
+                  leftTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      reservedSize: 40,
+                      getTitlesWidget: (value, meta) {
+                        return Text('${value.toInt()}');
+                      },
+                    ),
+                  ),
+                  bottomTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      reservedSize: 30,
+                      getTitlesWidget: (value, meta) {
+                        final index = value.toInt();
+                        if (index >= 0 && index < sortedRecords.length) {
+                          return Text(
+                            DateFormat('MM/dd')
+                                .format(sortedRecords[index].recordDate),
+                            style: const TextStyle(fontSize: 10),
+                          );
+                        }
+                        return const Text('');
+                      },
+                    ),
+                  ),
+                  rightTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false)),
+                  topTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false)),
+                ),
+                borderData: FlBorderData(show: true),
+                lineBarsData: [
+                  LineChartBarData(
+                    spots: systolicSpots,
+                    isCurved: true,
+                    color: Colors.red,
+                    barWidth: 3,
+                    dotData: const FlDotData(show: true),
+                  ),
+                  LineChartBarData(
+                    spots: diastolicSpots,
+                    isCurved: true,
+                    color: Colors.blue,
+                    barWidth: 3,
+                    dotData: const FlDotData(show: true),
+                  ),
+                ],
+              ),
+            );
+          },
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (error, stack) => Center(child: Text('Error: $error')),
+        );
+      },
+    );
+  }
+
+  Widget _buildLipidGraph(WidgetRef ref) {
+    return Consumer(
+      builder: (context, ref, child) {
+        final lipidRecordsAsync =
+            ref.watch(lipidRecordNotifierProvider(profile.id!));
+
+        return lipidRecordsAsync.when(
+          data: (records) {
+            if (records.isEmpty) {
+              return const Center(
+                child: Text('No Lipid Profile data available'),
+              );
+            }
+
+            // Sort records by date
+            final sortedRecords = List<LipidRecord>.from(records)
+              ..sort((a, b) => a.recordDate.compareTo(b.recordDate));
+
+            final totalCholesterolSpots =
+                sortedRecords.asMap().entries.map((entry) {
+              return FlSpot(entry.key.toDouble(),
+                  entry.value.cholesterolTotal.toDouble());
+            }).toList();
+
+            final hdlSpots = sortedRecords.asMap().entries.map((entry) {
+              return FlSpot(entry.key.toDouble(), entry.value.hdl.toDouble());
+            }).toList();
+
+            final ldlSpots = sortedRecords.asMap().entries.map((entry) {
+              return FlSpot(entry.key.toDouble(), entry.value.ldl.toDouble());
+            }).toList();
+
+            return LineChart(
+              LineChartData(
+                gridData: const FlGridData(show: true),
+                titlesData: FlTitlesData(
+                  leftTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      reservedSize: 50,
+                      getTitlesWidget: (value, meta) {
+                        return Text('${value.toInt()}');
+                      },
+                    ),
+                  ),
+                  bottomTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      reservedSize: 30,
+                      getTitlesWidget: (value, meta) {
+                        final index = value.toInt();
+                        if (index >= 0 && index < sortedRecords.length) {
+                          return Text(
+                            DateFormat('MM/dd')
+                                .format(sortedRecords[index].recordDate),
+                            style: const TextStyle(fontSize: 10),
+                          );
+                        }
+                        return const Text('');
+                      },
+                    ),
+                  ),
+                  rightTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false)),
+                  topTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false)),
+                ),
+                borderData: FlBorderData(show: true),
+                lineBarsData: [
+                  LineChartBarData(
+                    spots: totalCholesterolSpots,
+                    isCurved: true,
+                    color: Colors.orange,
+                    barWidth: 3,
+                    dotData: const FlDotData(show: true),
+                  ),
+                  LineChartBarData(
+                    spots: hdlSpots,
+                    isCurved: true,
+                    color: Colors.green,
+                    barWidth: 3,
+                    dotData: const FlDotData(show: true),
+                  ),
+                  LineChartBarData(
+                    spots: ldlSpots,
+                    isCurved: true,
+                    color: Colors.red,
+                    barWidth: 3,
+                    dotData: const FlDotData(show: true),
+                  ),
+                ],
+              ),
+            );
+          },
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (error, stack) => Center(child: Text('Error: $error')),
+        );
+      },
     );
   }
 
@@ -578,7 +1008,7 @@ class ProfileDetailScreen extends ConsumerWidget {
       context: context,
       title: 'Delete HbA1c Record',
       content:
-          'Are you sure you want to delete this HbA1c record?\n\nDate: ${DateFormat('MMM d, y').format(record.recordDate)}\nHbA1c: ${record.hba1c}%',
+          'Are you sure you want to delete this HbA1c record?\n\nDate: ${DateFormat('MMM d, y').format(record.recordDate)}',
       onConfirm: () {
         final notifier =
             ref.read(sugarRecordNotifierProvider(profile.id!).notifier);
@@ -595,7 +1025,7 @@ class ProfileDetailScreen extends ConsumerWidget {
       context: context,
       title: 'Delete Blood Pressure Record',
       content:
-          'Are you sure you want to delete this blood pressure record?\n\nDate: ${DateFormat('MMM d, y').format(record.recordDate)}\nSystolic: ${record.systolic} mmHg\nDiastolic: ${record.diastolic} mmHg',
+          'Are you sure you want to delete this blood pressure record?\n\nDate: ${DateFormat('MMM d, y').format(record.recordDate)}',
       onConfirm: () {
         final notifier =
             ref.read(bpRecordNotifierProvider(profile.id!).notifier);
@@ -614,7 +1044,7 @@ class ProfileDetailScreen extends ConsumerWidget {
       context: context,
       title: 'Delete Lipid Profile Record',
       content:
-          'Are you sure you want to delete this lipid profile record?\n\nDate: ${DateFormat('MMM d, y').format(record.recordDate)}\nTotal Cholesterol: ${record.cholesterolTotal} mg/dL\nLDL: ${record.ldl} mg/dL\nHDL: ${record.hdl} mg/dL',
+          'Are you sure you want to delete this lipid profile record?\n\nDate: ${DateFormat('MMM d, y').format(record.recordDate)}',
       onConfirm: () {
         final notifier =
             ref.read(lipidRecordNotifierProvider(profile.id!).notifier);

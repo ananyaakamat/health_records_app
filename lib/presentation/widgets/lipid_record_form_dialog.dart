@@ -155,82 +155,58 @@ class _LipidRecordFormDialogState extends State<LipidRecordFormDialog> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildTextField(
-                        label: 'Total Cholesterol (mg/dL) - Normal: <200',
-                        hint: '200',
-                        controller: _cholesterolTotalController,
-                        validatorMessage: 'Please enter total cholesterol',
-                        minValue: 50,
-                        maxValue: 500,
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: _buildTextField(
-                        label: 'HDL Cholesterol (mg/dL) - Normal: 40-60',
-                        hint: '50',
-                        controller: _hdlController,
-                        validatorMessage: 'Please enter HDL value',
-                        minValue: 10,
-                        maxValue: 150,
-                      ),
-                    ),
-                  ],
+                _buildTextField(
+                  label: 'Total Cholesterol (mg/dL) - Normal: <200',
+                  hint: '200',
+                  controller: _cholesterolTotalController,
+                  validatorMessage: 'Please enter total cholesterol',
+                  minValue: 50,
+                  maxValue: 500,
                 ),
                 const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildTextField(
-                        label: 'LDL Cholesterol (mg/dL) - Normal: 0-159',
-                        hint: '120',
-                        controller: _ldlController,
-                        validatorMessage: 'Please enter LDL value',
-                        minValue: 30,
-                        maxValue: 400,
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: _buildTextField(
-                        label: 'Triglycerides (mg/dL) - Normal: <150',
-                        hint: '150',
-                        controller: _triglyceridesController,
-                        validatorMessage: 'Please enter triglycerides value',
-                        minValue: 20,
-                        maxValue: 800,
-                      ),
-                    ),
-                  ],
+                _buildTextField(
+                  label: 'HDL Cholesterol (mg/dL) - Normal: 40-60',
+                  hint: '50',
+                  controller: _hdlController,
+                  validatorMessage: 'Please enter HDL value',
+                  minValue: 10,
+                  maxValue: 150,
                 ),
                 const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildTextField(
-                        label: 'VLDL Cholesterol (mg/dL) - Normal: 0-40',
-                        hint: '30',
-                        controller: _vldlController,
-                        validatorMessage: 'Please enter VLDL value',
-                        minValue: 5,
-                        maxValue: 100,
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: _buildTextField(
-                        label: 'Non-HDL Cholesterol (mg/dL) - Normal: <130',
-                        hint: '150',
-                        controller: _nonHdlController,
-                        validatorMessage: 'Please enter Non-HDL value',
-                        minValue: 40,
-                        maxValue: 450,
-                      ),
-                    ),
-                  ],
+                _buildTextField(
+                  label: 'LDL Cholesterol (mg/dL) - Normal: 0-159',
+                  hint: '120',
+                  controller: _ldlController,
+                  validatorMessage: 'Please enter LDL value',
+                  minValue: 30,
+                  maxValue: 400,
+                ),
+                const SizedBox(height: 16),
+                _buildTextField(
+                  label: 'Triglycerides (mg/dL) - Normal: <150',
+                  hint: '150',
+                  controller: _triglyceridesController,
+                  validatorMessage: 'Please enter triglycerides value',
+                  minValue: 20,
+                  maxValue: 800,
+                ),
+                const SizedBox(height: 16),
+                _buildTextField(
+                  label: 'VLDL Cholesterol (mg/dL) - Normal: 0-40',
+                  hint: '30',
+                  controller: _vldlController,
+                  validatorMessage: 'Please enter VLDL value',
+                  minValue: 5,
+                  maxValue: 100,
+                ),
+                const SizedBox(height: 16),
+                _buildTextField(
+                  label: 'Non-HDL Cholesterol (mg/dL) - Normal: <130',
+                  hint: '150',
+                  controller: _nonHdlController,
+                  validatorMessage: 'Please enter Non-HDL value',
+                  minValue: 40,
+                  maxValue: 450,
                 ),
                 const SizedBox(height: 16),
                 _buildTextField(
