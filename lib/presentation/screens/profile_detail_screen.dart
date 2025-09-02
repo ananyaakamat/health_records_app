@@ -668,104 +668,48 @@ class ProfileDetailScreen extends ConsumerWidget {
               );
             }
 
-            // Sort records by date
-            final sortedRecords = List<SugarRecord>.from(records)
-              ..sort((a, b) => a.recordDate.compareTo(b.recordDate));
-
-            final spots = sortedRecords.asMap().entries.map((entry) {
-              return FlSpot(entry.key.toDouble(), entry.value.hba1c);
-            }).toList();
-
-            // Calculate dynamic width based on number of records - more spacing for better readability
-            final chartWidth =
-                (sortedRecords.length * 80.0).clamp(400.0, double.infinity);
-
             return GestureDetector(
-              onTap: () => _openFullScreenGraph(
+              onDoubleTap: () => _openFullScreenGraph(
                 context,
                 ref,
                 GraphType.sugar,
                 'HbA1c Levels',
                 records,
               ),
-              child: SizedBox(
-                height: 600, // Doubled height
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: SizedBox(
-                    width: chartWidth,
-                    height: 600,
-                    child: LineChart(
-                      LineChartData(
-                        gridData: const FlGridData(
-                          show: true,
-                          drawVerticalLine: true,
-                          horizontalInterval: 1,
-                          verticalInterval: 1,
-                        ),
-                        titlesData: FlTitlesData(
-                          leftTitles: AxisTitles(
-                            sideTitles: SideTitles(
-                              showTitles: true,
-                              reservedSize: 60,
-                              getTitlesWidget: (value, meta) {
-                                return Text(
-                                  '${value.toStringAsFixed(1)}%',
-                                  style: const TextStyle(fontSize: 12),
-                                );
-                              },
-                            ),
-                          ),
-                          bottomTitles: AxisTitles(
-                            sideTitles: SideTitles(
-                              showTitles: true,
-                              reservedSize:
-                                  80, // Increased reserved size to prevent truncation
-                              interval: 1,
-                              getTitlesWidget: (value, meta) {
-                                final index = value.toInt();
-                                if (index >= 0 &&
-                                    index < sortedRecords.length) {
-                                  return Padding(
-                                    padding: const EdgeInsets.only(top: 12.0),
-                                    child: Transform.rotate(
-                                      angle:
-                                          -0.4, // Slightly less rotation for better readability
-                                      child: Text(
-                                        DateFormat('MM/dd/yy').format(
-                                            // Added year for clarity
-                                            sortedRecords[index].recordDate),
-                                        style: const TextStyle(fontSize: 10),
-                                      ),
-                                    ),
-                                  );
-                                }
-                                return const Text('');
-                              },
-                            ),
-                          ),
-                          rightTitles: const AxisTitles(
-                              sideTitles: SideTitles(showTitles: false)),
-                          topTitles: const AxisTitles(
-                              sideTitles: SideTitles(showTitles: false)),
-                        ),
-                        borderData: FlBorderData(show: true),
-                        lineBarsData: [
-                          LineChartBarData(
-                            spots: spots,
-                            isCurved: true,
-                            color: AppTheme.primaryColor,
-                            barWidth: 3,
-                            dotData: const FlDotData(show: true),
-                            belowBarData: BarAreaData(
-                              show: true,
-                              color: AppTheme.primaryColor.withOpacity(0.2),
-                            ),
-                          ),
-                        ],
+              child: Container(
+                height: 200,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: Colors.grey[50],
+                  border: Border.all(color: Colors.grey[300]!),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      Icons.show_chart,
+                      size: 48,
+                      color: AppTheme.primaryColor,
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Double tap to open graph',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.grey,
                       ),
                     ),
-                  ),
+                    const SizedBox(height: 8),
+                    Text(
+                      '${records.length} HbA1c records available',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                  ],
                 ),
               ), // Close child SizedBox
             ); // Close GestureDetector Sugar
@@ -790,133 +734,48 @@ class ProfileDetailScreen extends ConsumerWidget {
               );
             }
 
-            // Sort records by date
-            final sortedRecords = List<BPRecord>.from(records)
-              ..sort((a, b) => a.recordDate.compareTo(b.recordDate));
-
-            final systolicSpots = sortedRecords.asMap().entries.map((entry) {
-              return FlSpot(
-                  entry.key.toDouble(), entry.value.systolic.toDouble());
-            }).toList();
-
-            final diastolicSpots = sortedRecords.asMap().entries.map((entry) {
-              return FlSpot(
-                  entry.key.toDouble(), entry.value.diastolic.toDouble());
-            }).toList();
-
-            // Calculate dynamic width with better spacing
-            final chartWidth =
-                (sortedRecords.length * 80.0).clamp(400.0, double.infinity);
-
             return GestureDetector(
-              onTap: () => _openFullScreenGraph(
+              onDoubleTap: () => _openFullScreenGraph(
                 context,
                 ref,
                 GraphType.bloodPressure,
                 'Blood Pressure',
                 records,
               ),
-              child: SizedBox(
-                height: 600, // Doubled height
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: SizedBox(
-                    width: chartWidth,
-                    height: 600,
-                    child: Column(
-                      children: [
-                        // Legend for BP readings
-                        Container(
-                          height: 40,
-                          padding: const EdgeInsets.all(8),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              _buildLegendItem('Systolic', Colors.red),
-                              const SizedBox(width: 20),
-                              _buildLegendItem('Diastolic', Colors.blue),
-                            ],
-                          ),
-                        ),
-                        // Chart
-                        Expanded(
-                          child: LineChart(
-                            LineChartData(
-                              gridData: const FlGridData(
-                                show: true,
-                                drawVerticalLine: true,
-                                horizontalInterval: 10,
-                                verticalInterval: 1,
-                              ),
-                              titlesData: FlTitlesData(
-                                leftTitles: AxisTitles(
-                                  sideTitles: SideTitles(
-                                    showTitles: true,
-                                    reservedSize: 60,
-                                    getTitlesWidget: (value, meta) {
-                                      return Text(
-                                        '${value.toInt()}',
-                                        style: const TextStyle(fontSize: 12),
-                                      );
-                                    },
-                                  ),
-                                ),
-                                bottomTitles: AxisTitles(
-                                  sideTitles: SideTitles(
-                                    showTitles: true,
-                                    reservedSize: 80, // Increased reserved size
-                                    interval: 1,
-                                    getTitlesWidget: (value, meta) {
-                                      final index = value.toInt();
-                                      if (index >= 0 &&
-                                          index < sortedRecords.length) {
-                                        return Padding(
-                                          padding:
-                                              const EdgeInsets.only(top: 12.0),
-                                          child: Transform.rotate(
-                                            angle: -0.4,
-                                            child: Text(
-                                              DateFormat('MM/dd/yy').format(
-                                                  sortedRecords[index]
-                                                      .recordDate),
-                                              style:
-                                                  const TextStyle(fontSize: 10),
-                                            ),
-                                          ),
-                                        );
-                                      }
-                                      return const Text('');
-                                    },
-                                  ),
-                                ),
-                                rightTitles: const AxisTitles(
-                                    sideTitles: SideTitles(showTitles: false)),
-                                topTitles: const AxisTitles(
-                                    sideTitles: SideTitles(showTitles: false)),
-                              ),
-                              borderData: FlBorderData(show: true),
-                              lineBarsData: [
-                                LineChartBarData(
-                                  spots: systolicSpots,
-                                  isCurved: true,
-                                  color: Colors.red,
-                                  barWidth: 3,
-                                  dotData: const FlDotData(show: true),
-                                ),
-                                LineChartBarData(
-                                  spots: diastolicSpots,
-                                  isCurved: true,
-                                  color: Colors.blue,
-                                  barWidth: 3,
-                                  dotData: const FlDotData(show: true),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
+              child: Container(
+                height: 200,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: Colors.grey[50],
+                  border: Border.all(color: Colors.grey[300]!),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      Icons.favorite,
+                      size: 48,
+                      color: Colors.red,
                     ),
-                  ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Double tap to open graph',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.grey,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      '${records.length} Blood Pressure records available',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                  ],
                 ),
               ), // Close child SizedBox
             ); // Close GestureDetector BP
@@ -942,211 +801,48 @@ class ProfileDetailScreen extends ConsumerWidget {
               );
             }
 
-            // Sort records by date
-            final sortedRecords = List<LipidRecord>.from(records)
-              ..sort((a, b) => a.recordDate.compareTo(b.recordDate));
-
-            final totalCholesterolSpots =
-                sortedRecords.asMap().entries.map((entry) {
-              return FlSpot(entry.key.toDouble(),
-                  entry.value.cholesterolTotal.toDouble());
-            }).toList();
-
-            final hdlSpots = sortedRecords.asMap().entries.map((entry) {
-              return FlSpot(entry.key.toDouble(), entry.value.hdl.toDouble());
-            }).toList();
-
-            final ldlSpots = sortedRecords.asMap().entries.map((entry) {
-              return FlSpot(entry.key.toDouble(), entry.value.ldl.toDouble());
-            }).toList();
-
-            final triglyceridesSpots =
-                sortedRecords.asMap().entries.map((entry) {
-              return FlSpot(
-                  entry.key.toDouble(), entry.value.triglycerides.toDouble());
-            }).toList();
-
-            final vldlSpots = sortedRecords.asMap().entries.map((entry) {
-              return FlSpot(entry.key.toDouble(), entry.value.vldl.toDouble());
-            }).toList();
-
-            final nonHdlSpots = sortedRecords.asMap().entries.map((entry) {
-              return FlSpot(
-                  entry.key.toDouble(), entry.value.nonHdl.toDouble());
-            }).toList();
-
-            final cholHdlRatioSpots =
-                sortedRecords.asMap().entries.map((entry) {
-              return FlSpot(entry.key.toDouble(), entry.value.cholHdlRatio);
-            }).toList();
-
-            // Calculate dynamic width with more spacing for lipid graph
-            final chartWidth =
-                (sortedRecords.length * 100.0).clamp(500.0, double.infinity);
-
             return GestureDetector(
-              onTap: () => _openFullScreenGraph(
+              onDoubleTap: () => _openFullScreenGraph(
                 context,
                 ref,
                 GraphType.lipidProfile,
                 'Lipid Profile',
                 records,
               ),
-              child: SizedBox(
-                height: 700, // Doubled height from 350 to 700
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: SizedBox(
-                    width: chartWidth,
-                    height: 700,
-                    child: Column(
-                      children: [
-                        // Legend for all 7 parameters - split into two rows to reduce clutter
-                        Container(
-                          height: 80,
-                          padding: const EdgeInsets.all(8),
-                          child: Column(
-                            children: [
-                              Wrap(
-                                alignment: WrapAlignment.center,
-                                spacing: 12,
-                                children: [
-                                  _buildLegendItem('Total Chol', Colors.orange),
-                                  _buildLegendItem('HDL', Colors.green),
-                                  _buildLegendItem('LDL', Colors.red),
-                                  _buildLegendItem(
-                                      'Triglycerides', Colors.purple),
-                                ],
-                              ),
-                              const SizedBox(height: 8),
-                              Wrap(
-                                alignment: WrapAlignment.center,
-                                spacing: 12,
-                                children: [
-                                  _buildLegendItem('VLDL', Colors.teal),
-                                  _buildLegendItem('Non-HDL', Colors.brown),
-                                  _buildLegendItem(
-                                      'Chol/HDL Ratio', Colors.pink),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                        // Chart
-                        Expanded(
-                          child: LineChart(
-                            LineChartData(
-                              gridData: const FlGridData(
-                                show: true,
-                                drawVerticalLine: true,
-                                horizontalInterval:
-                                    20, // Increased interval for less cluttered grid
-                                verticalInterval: 1,
-                              ),
-                              titlesData: FlTitlesData(
-                                leftTitles: AxisTitles(
-                                  sideTitles: SideTitles(
-                                    showTitles: true,
-                                    reservedSize: 60,
-                                    getTitlesWidget: (value, meta) {
-                                      return Text(
-                                        '${value.toInt()}',
-                                        style: const TextStyle(fontSize: 12),
-                                      );
-                                    },
-                                  ),
-                                ),
-                                bottomTitles: AxisTitles(
-                                  sideTitles: SideTitles(
-                                    showTitles: true,
-                                    reservedSize: 80, // Increased reserved size
-                                    interval: 1,
-                                    getTitlesWidget: (value, meta) {
-                                      final index = value.toInt();
-                                      if (index >= 0 &&
-                                          index < sortedRecords.length) {
-                                        return Padding(
-                                          padding:
-                                              const EdgeInsets.only(top: 12.0),
-                                          child: Transform.rotate(
-                                            angle: -0.4,
-                                            child: Text(
-                                              DateFormat('MM/dd/yy').format(
-                                                  sortedRecords[index]
-                                                      .recordDate),
-                                              style:
-                                                  const TextStyle(fontSize: 10),
-                                            ),
-                                          ),
-                                        );
-                                      }
-                                      return const Text('');
-                                    },
-                                  ),
-                                ),
-                                rightTitles: const AxisTitles(
-                                    sideTitles: SideTitles(showTitles: false)),
-                                topTitles: const AxisTitles(
-                                    sideTitles: SideTitles(showTitles: false)),
-                              ),
-                              borderData: FlBorderData(show: true),
-                              lineBarsData: [
-                                LineChartBarData(
-                                  spots: totalCholesterolSpots,
-                                  isCurved: true,
-                                  color: Colors.orange,
-                                  barWidth: 2,
-                                  dotData: const FlDotData(show: true),
-                                ),
-                                LineChartBarData(
-                                  spots: hdlSpots,
-                                  isCurved: true,
-                                  color: Colors.green,
-                                  barWidth: 2,
-                                  dotData: const FlDotData(show: true),
-                                ),
-                                LineChartBarData(
-                                  spots: ldlSpots,
-                                  isCurved: true,
-                                  color: Colors.red,
-                                  barWidth: 2,
-                                  dotData: const FlDotData(show: true),
-                                ),
-                                LineChartBarData(
-                                  spots: triglyceridesSpots,
-                                  isCurved: true,
-                                  color: Colors.purple,
-                                  barWidth: 2,
-                                  dotData: const FlDotData(show: true),
-                                ),
-                                LineChartBarData(
-                                  spots: vldlSpots,
-                                  isCurved: true,
-                                  color: Colors.teal,
-                                  barWidth: 2,
-                                  dotData: const FlDotData(show: true),
-                                ),
-                                LineChartBarData(
-                                  spots: nonHdlSpots,
-                                  isCurved: true,
-                                  color: Colors.brown,
-                                  barWidth: 2,
-                                  dotData: const FlDotData(show: true),
-                                ),
-                                LineChartBarData(
-                                  spots: cholHdlRatioSpots,
-                                  isCurved: true,
-                                  color: Colors.pink,
-                                  barWidth: 2,
-                                  dotData: const FlDotData(show: true),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
+              child: Container(
+                height: 200,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: Colors.grey[50],
+                  border: Border.all(color: Colors.grey[300]!),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      Icons.water_drop,
+                      size: 48,
+                      color: Colors.blue,
                     ),
-                  ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Double tap to open graph',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.grey,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      '${records.length} Lipid Profile records available',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                  ],
                 ),
               ), // Close child SizedBox
             ); // Close GestureDetector Lipid
@@ -1393,27 +1089,6 @@ class ProfileDetailScreen extends ConsumerWidget {
       ),
     );
   }
-
-  Widget _buildLegendItem(String label, Color color) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 12,
-          height: 12,
-          decoration: BoxDecoration(
-            color: color,
-            shape: BoxShape.circle,
-          ),
-        ),
-        const SizedBox(width: 4),
-        Text(
-          label,
-          style: const TextStyle(fontSize: 10),
-        ),
-      ],
-    );
-  }
 }
 
 class FullScreenGraphScreen extends ConsumerStatefulWidget {
@@ -1467,7 +1142,8 @@ class _FullScreenGraphScreenState extends ConsumerState<FullScreenGraphScreen> {
         ),
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(
+            8.0), // Reduced from 16.0 to 8.0 for 80% screen coverage
         child: _buildFullScreenGraph(),
       ),
     );
