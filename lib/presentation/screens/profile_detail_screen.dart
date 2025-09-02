@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'dart:math' as math;
 import '../../data/models/profile.dart';
 import '../../core/themes/app_theme.dart';
 import '../providers/sugar_record_provider.dart';
@@ -487,7 +488,7 @@ class ProfileDetailScreen extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'HbA1c (Normal: 4-5.6%): ${record.hba1c.toStringAsFixed(1)}%',
+                    'HbA1c (4–5.6%): ${record.hba1c.toStringAsFixed(1)}%',
                     style: const TextStyle(
                         fontSize: 14, fontWeight: FontWeight.w500),
                   ),
@@ -533,13 +534,13 @@ class ProfileDetailScreen extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Systolic (SBP) - mmHg (Normal: <120): ${record.systolic}',
+                    'Systolic (SBP) - mmHg (<120): ${record.systolic}',
                     style: const TextStyle(fontSize: 14),
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Diastolic (DBP) - mmHg (Normal: <80): ${record.diastolic}',
+                    'Diastolic (DBP) - mmHg (<80): ${record.diastolic}',
                     style: const TextStyle(fontSize: 14),
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -584,43 +585,43 @@ class ProfileDetailScreen extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Cholesterol Total (Normal: <200): ${record.cholesterolTotal}',
+                    'Cholesterol Total (<200): ${record.cholesterolTotal}',
                     style: const TextStyle(fontSize: 14),
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Triglycerides (Normal: <150): ${record.triglycerides}',
+                    'Triglycerides (<150): ${record.triglycerides}',
                     style: const TextStyle(fontSize: 14),
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'HDL Cholesterol (Normal: 40-60): ${record.hdl}',
+                    'HDL Cholesterol (40–60): ${record.hdl}',
                     style: const TextStyle(fontSize: 14),
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Non-HDL Cholesterol (Normal: <130): ${record.nonHdl}',
+                    'Non-HDL Cholesterol (<130): ${record.nonHdl}',
                     style: const TextStyle(fontSize: 14),
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'LDL Cholesterol (Normal: 0-159): ${record.ldl}',
+                    'LDL Cholesterol (0–159): ${record.ldl}',
                     style: const TextStyle(fontSize: 14),
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'VLDL Cholesterol (Normal: 0-40): ${record.vldl}',
+                    'VLDL Cholesterol (0–40): ${record.vldl}',
                     style: const TextStyle(fontSize: 14),
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Cholesterol/HDL Ratio (Normal: 0-5): ${record.cholHdlRatio}',
+                    'Cholesterol/HDL Ratio (0–5): ${record.cholHdlRatio}',
                     style: const TextStyle(fontSize: 14),
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -1500,70 +1501,76 @@ class _FullScreenGraphScreenState extends ConsumerState<FullScreenGraphScreen> {
       return FlSpot(entry.key.toDouble(), entry.value.hba1c);
     }).toList();
 
-    return LineChart(
-      LineChartData(
-        gridData: const FlGridData(
-          show: true,
-          drawVerticalLine: true,
-          horizontalInterval: 0.5,
-          verticalInterval: 1,
-        ),
-        titlesData: FlTitlesData(
-          leftTitles: AxisTitles(
-            sideTitles: SideTitles(
-              showTitles: true,
-              reservedSize: 60,
-              getTitlesWidget: (value, meta) {
-                return Text(
-                  '${value.toStringAsFixed(1)}%',
-                  style: const TextStyle(fontSize: 14),
-                );
-              },
-            ),
-          ),
-          bottomTitles: AxisTitles(
-            sideTitles: SideTitles(
-              showTitles: true,
-              reservedSize: 60,
-              interval: 1,
-              getTitlesWidget: (value, meta) {
-                final index = value.toInt();
-                if (index >= 0 && index < sortedRecords.length) {
-                  return Padding(
-                    padding: const EdgeInsets.only(top: 8.0),
-                    child: Transform.rotate(
-                      angle: -0.3,
-                      child: Text(
-                        DateFormat('MM/dd/yy')
-                            .format(sortedRecords[index].recordDate),
-                        style: const TextStyle(fontSize: 12),
-                      ),
-                    ),
-                  );
-                }
-                return const Text('');
-              },
-            ),
-          ),
-          rightTitles:
-              const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          topTitles:
-              const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-        ),
-        borderData: FlBorderData(show: true),
-        lineBarsData: [
-          LineChartBarData(
-            spots: spots,
-            isCurved: true,
-            color: AppTheme.primaryColor,
-            barWidth: 4,
-            dotData: const FlDotData(show: true),
-            belowBarData: BarAreaData(
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: SizedBox(
+        width: math.max(400, sortedRecords.length * 80.0),
+        child: LineChart(
+          LineChartData(
+            gridData: const FlGridData(
               show: true,
-              color: AppTheme.primaryColor.withOpacity(0.2),
+              drawVerticalLine: true,
+              horizontalInterval: 0.5,
+              verticalInterval: 1,
             ),
+            titlesData: FlTitlesData(
+              leftTitles: AxisTitles(
+                sideTitles: SideTitles(
+                  showTitles: true,
+                  reservedSize: 60,
+                  getTitlesWidget: (value, meta) {
+                    return Text(
+                      '${value.toStringAsFixed(1)}%',
+                      style: const TextStyle(fontSize: 14),
+                    );
+                  },
+                ),
+              ),
+              bottomTitles: AxisTitles(
+                sideTitles: SideTitles(
+                  showTitles: true,
+                  reservedSize: 80,
+                  interval: 1,
+                  getTitlesWidget: (value, meta) {
+                    final index = value.toInt();
+                    if (index >= 0 && index < sortedRecords.length) {
+                      return Padding(
+                        padding: const EdgeInsets.only(top: 8.0),
+                        child: Transform.rotate(
+                          angle: -0.2,
+                          child: Text(
+                            DateFormat('MM/dd/yy')
+                                .format(sortedRecords[index].recordDate),
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                        ),
+                      );
+                    }
+                    return const Text('');
+                  },
+                ),
+              ),
+              rightTitles:
+                  const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              topTitles:
+                  const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            ),
+            borderData: FlBorderData(show: true),
+            lineBarsData: [
+              LineChartBarData(
+                spots: spots,
+                isCurved: true,
+                color: AppTheme.primaryColor,
+                barWidth: 4,
+                dotData: const FlDotData(show: true),
+                belowBarData: BarAreaData(
+                  show: true,
+                  color: AppTheme.primaryColor.withOpacity(0.2),
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -1607,73 +1614,79 @@ class _FullScreenGraphScreenState extends ConsumerState<FullScreenGraphScreen> {
         ),
         // Chart
         Expanded(
-          child: LineChart(
-            LineChartData(
-              gridData: const FlGridData(
-                show: true,
-                drawVerticalLine: true,
-                horizontalInterval: 10,
-                verticalInterval: 1,
-              ),
-              titlesData: FlTitlesData(
-                leftTitles: AxisTitles(
-                  sideTitles: SideTitles(
-                    showTitles: true,
-                    reservedSize: 60,
-                    getTitlesWidget: (value, meta) {
-                      return Text(
-                        '${value.toInt()}',
-                        style: const TextStyle(fontSize: 14),
-                      );
-                    },
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: SizedBox(
+              width: math.max(400, sortedRecords.length * 80.0),
+              child: LineChart(
+                LineChartData(
+                  gridData: const FlGridData(
+                    show: true,
+                    drawVerticalLine: true,
+                    horizontalInterval: 10,
+                    verticalInterval: 1,
                   ),
-                ),
-                bottomTitles: AxisTitles(
-                  sideTitles: SideTitles(
-                    showTitles: true,
-                    reservedSize: 60,
-                    interval: 1,
-                    getTitlesWidget: (value, meta) {
-                      final index = value.toInt();
-                      if (index >= 0 && index < sortedRecords.length) {
-                        return Padding(
-                          padding: const EdgeInsets.only(top: 8.0),
-                          child: Transform.rotate(
-                            angle: -0.3,
-                            child: Text(
-                              DateFormat('MM/dd/yy')
-                                  .format(sortedRecords[index].recordDate),
-                              style: const TextStyle(fontSize: 12),
-                            ),
-                          ),
-                        );
-                      }
-                      return const Text('');
-                    },
+                  titlesData: FlTitlesData(
+                    leftTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        reservedSize: 60,
+                        getTitlesWidget: (value, meta) {
+                          return Text(
+                            '${value.toInt()}',
+                            style: const TextStyle(fontSize: 14),
+                          );
+                        },
+                      ),
+                    ),
+                    bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        reservedSize: 80,
+                        interval: 1,
+                        getTitlesWidget: (value, meta) {
+                          final index = value.toInt();
+                          if (index >= 0 && index < sortedRecords.length) {
+                            return Padding(
+                              padding: const EdgeInsets.only(top: 8.0),
+                              child: Transform.rotate(
+                                angle: -0.2,
+                                child: Text(
+                                  DateFormat('MM/dd/yy')
+                                      .format(sortedRecords[index].recordDate),
+                                  style: const TextStyle(fontSize: 12),
+                                ),
+                              ),
+                            );
+                          }
+                          return const Text('');
+                        },
+                      ),
+                    ),
+                    rightTitles: const AxisTitles(
+                        sideTitles: SideTitles(showTitles: false)),
+                    topTitles: const AxisTitles(
+                        sideTitles: SideTitles(showTitles: false)),
                   ),
+                  borderData: FlBorderData(show: true),
+                  lineBarsData: [
+                    LineChartBarData(
+                      spots: systolicSpots,
+                      isCurved: true,
+                      color: Colors.red,
+                      barWidth: 4,
+                      dotData: const FlDotData(show: true),
+                    ),
+                    LineChartBarData(
+                      spots: diastolicSpots,
+                      isCurved: true,
+                      color: Colors.blue,
+                      barWidth: 4,
+                      dotData: const FlDotData(show: true),
+                    ),
+                  ],
                 ),
-                rightTitles:
-                    const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                topTitles:
-                    const AxisTitles(sideTitles: SideTitles(showTitles: false)),
               ),
-              borderData: FlBorderData(show: true),
-              lineBarsData: [
-                LineChartBarData(
-                  spots: systolicSpots,
-                  isCurved: true,
-                  color: Colors.red,
-                  barWidth: 4,
-                  dotData: const FlDotData(show: true),
-                ),
-                LineChartBarData(
-                  spots: diastolicSpots,
-                  isCurved: true,
-                  color: Colors.blue,
-                  barWidth: 4,
-                  dotData: const FlDotData(show: true),
-                ),
-              ],
             ),
           ),
         ),
@@ -1757,108 +1770,114 @@ class _FullScreenGraphScreenState extends ConsumerState<FullScreenGraphScreen> {
         ),
         // Chart
         Expanded(
-          child: LineChart(
-            LineChartData(
-              gridData: const FlGridData(
-                show: true,
-                drawVerticalLine: true,
-                horizontalInterval: 20,
-                verticalInterval: 1,
-              ),
-              titlesData: FlTitlesData(
-                leftTitles: AxisTitles(
-                  sideTitles: SideTitles(
-                    showTitles: true,
-                    reservedSize: 60,
-                    getTitlesWidget: (value, meta) {
-                      return Text(
-                        '${value.toInt()}',
-                        style: const TextStyle(fontSize: 14),
-                      );
-                    },
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: SizedBox(
+              width: math.max(400, sortedRecords.length * 80.0),
+              child: LineChart(
+                LineChartData(
+                  gridData: const FlGridData(
+                    show: true,
+                    drawVerticalLine: true,
+                    horizontalInterval: 20,
+                    verticalInterval: 1,
                   ),
-                ),
-                bottomTitles: AxisTitles(
-                  sideTitles: SideTitles(
-                    showTitles: true,
-                    reservedSize: 60,
-                    interval: 1,
-                    getTitlesWidget: (value, meta) {
-                      final index = value.toInt();
-                      if (index >= 0 && index < sortedRecords.length) {
-                        return Padding(
-                          padding: const EdgeInsets.only(top: 8.0),
-                          child: Transform.rotate(
-                            angle: -0.3,
-                            child: Text(
-                              DateFormat('MM/dd/yy')
-                                  .format(sortedRecords[index].recordDate),
-                              style: const TextStyle(fontSize: 12),
-                            ),
-                          ),
-                        );
-                      }
-                      return const Text('');
-                    },
+                  titlesData: FlTitlesData(
+                    leftTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        reservedSize: 60,
+                        getTitlesWidget: (value, meta) {
+                          return Text(
+                            '${value.toInt()}',
+                            style: const TextStyle(fontSize: 14),
+                          );
+                        },
+                      ),
+                    ),
+                    bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        reservedSize: 80,
+                        interval: 1,
+                        getTitlesWidget: (value, meta) {
+                          final index = value.toInt();
+                          if (index >= 0 && index < sortedRecords.length) {
+                            return Padding(
+                              padding: const EdgeInsets.only(top: 8.0),
+                              child: Transform.rotate(
+                                angle: -0.2,
+                                child: Text(
+                                  DateFormat('MM/dd/yy')
+                                      .format(sortedRecords[index].recordDate),
+                                  style: const TextStyle(fontSize: 12),
+                                ),
+                              ),
+                            );
+                          }
+                          return const Text('');
+                        },
+                      ),
+                    ),
+                    rightTitles: const AxisTitles(
+                        sideTitles: SideTitles(showTitles: false)),
+                    topTitles: const AxisTitles(
+                        sideTitles: SideTitles(showTitles: false)),
                   ),
+                  borderData: FlBorderData(show: true),
+                  lineBarsData: [
+                    LineChartBarData(
+                      spots: totalCholesterolSpots,
+                      isCurved: true,
+                      color: Colors.orange,
+                      barWidth: 3,
+                      dotData: const FlDotData(show: true),
+                    ),
+                    LineChartBarData(
+                      spots: hdlSpots,
+                      isCurved: true,
+                      color: Colors.green,
+                      barWidth: 3,
+                      dotData: const FlDotData(show: true),
+                    ),
+                    LineChartBarData(
+                      spots: ldlSpots,
+                      isCurved: true,
+                      color: Colors.red,
+                      barWidth: 3,
+                      dotData: const FlDotData(show: true),
+                    ),
+                    LineChartBarData(
+                      spots: triglyceridesSpots,
+                      isCurved: true,
+                      color: Colors.purple,
+                      barWidth: 3,
+                      dotData: const FlDotData(show: true),
+                    ),
+                    LineChartBarData(
+                      spots: vldlSpots,
+                      isCurved: true,
+                      color: Colors.teal,
+                      barWidth: 3,
+                      dotData: const FlDotData(show: true),
+                    ),
+                    LineChartBarData(
+                      spots: nonHdlSpots,
+                      isCurved: true,
+                      color: Colors.brown,
+                      barWidth: 3,
+                      dotData: const FlDotData(show: true),
+                    ),
+                    LineChartBarData(
+                      spots: cholHdlRatioSpots,
+                      isCurved: true,
+                      color: Colors.pink,
+                      barWidth: 3,
+                      dotData: const FlDotData(show: true),
+                    ),
+                  ],
                 ),
-                rightTitles:
-                    const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                topTitles:
-                    const AxisTitles(sideTitles: SideTitles(showTitles: false)),
               ),
-              borderData: FlBorderData(show: true),
-              lineBarsData: [
-                LineChartBarData(
-                  spots: totalCholesterolSpots,
-                  isCurved: true,
-                  color: Colors.orange,
-                  barWidth: 3,
-                  dotData: const FlDotData(show: true),
-                ),
-                LineChartBarData(
-                  spots: hdlSpots,
-                  isCurved: true,
-                  color: Colors.green,
-                  barWidth: 3,
-                  dotData: const FlDotData(show: true),
-                ),
-                LineChartBarData(
-                  spots: ldlSpots,
-                  isCurved: true,
-                  color: Colors.red,
-                  barWidth: 3,
-                  dotData: const FlDotData(show: true),
-                ),
-                LineChartBarData(
-                  spots: triglyceridesSpots,
-                  isCurved: true,
-                  color: Colors.purple,
-                  barWidth: 3,
-                  dotData: const FlDotData(show: true),
-                ),
-                LineChartBarData(
-                  spots: vldlSpots,
-                  isCurved: true,
-                  color: Colors.teal,
-                  barWidth: 3,
-                  dotData: const FlDotData(show: true),
-                ),
-                LineChartBarData(
-                  spots: nonHdlSpots,
-                  isCurved: true,
-                  color: Colors.brown,
-                  barWidth: 3,
-                  dotData: const FlDotData(show: true),
-                ),
-                LineChartBarData(
-                  spots: cholHdlRatioSpots,
-                  isCurved: true,
-                  color: Colors.pink,
-                  barWidth: 3,
-                  dotData: const FlDotData(show: true),
-                ),
-              ],
             ),
           ),
         ),
