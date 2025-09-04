@@ -4,7 +4,7 @@ class AppConstants {
 
   // Database
   static const String databaseName = 'health_records.db';
-  static const int databaseVersion = 1;
+  static const int databaseVersion = 3;
 
   // Table Names
   static const String profilesTable = 'profiles';
@@ -17,6 +17,11 @@ class AppConstants {
   static const int maxNameLength = 50;
   static const int minAge = 0;
   static const int maxAge = 120;
+  static const double minHeight = 50.0; // cm
+  static const double maxHeight = 300.0; // cm
+  static const double minWeight = 1.0; // kg
+  static const double maxWeight = 500.0; // kg
+  static const int maxMedicationLength = 200;
 
   // Health Parameter Ranges
   static const double normalHbA1cMin = 4.0;

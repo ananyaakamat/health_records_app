@@ -39,6 +39,9 @@ class DatabaseHelper {
         age INTEGER NOT NULL,
         gender TEXT NOT NULL,
         blood_group TEXT NOT NULL,
+        height REAL,
+        weight REAL,
+        medication TEXT,
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL
       )
@@ -105,9 +108,21 @@ class DatabaseHelper {
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
-    // Handle database upgrades here in future versions
-    if (oldVersion < newVersion) {
-      // Migration logic will be added here for future versions
+    // Handle database upgrades here
+    if (oldVersion < 2 && newVersion >= 2) {
+      // Add height and weight columns to profiles table
+      await db.execute('''
+        ALTER TABLE ${AppConstants.profilesTable} ADD COLUMN height REAL
+      ''');
+      await db.execute('''
+        ALTER TABLE ${AppConstants.profilesTable} ADD COLUMN weight REAL
+      ''');
+    }
+    if (oldVersion < 3 && newVersion >= 3) {
+      // Add medication column to profiles table
+      await db.execute('''
+        ALTER TABLE ${AppConstants.profilesTable} ADD COLUMN medication TEXT
+      ''');
     }
   }
 

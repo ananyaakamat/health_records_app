@@ -39,10 +39,10 @@ class ProfileDetailScreen extends ConsumerWidget {
             // Profile Summary Section
             _buildProfileSummary(context),
 
-            const SizedBox(height: 24),
+            const SizedBox(height: 6), // Further reduced by 50% (from 12 to 6)
 
             // Health Records Tabs Section
-            _buildHealthRecordsSection(context),
+            _buildHealthRecordsSection(context, ref),
           ],
         ),
       ),
@@ -66,32 +66,6 @@ class ProfileDetailScreen extends ConsumerWidget {
       ),
       child: Column(
         children: [
-          // Profile Avatar
-          CircleAvatar(
-            backgroundColor: AppTheme.primaryColor,
-            radius: 50,
-            child: Text(
-              profile.name.substring(0, 1).toUpperCase(),
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 36,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-
-          const SizedBox(height: 16),
-
-          // Profile Name
-          Text(
-            profile.name,
-            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-          ),
-
-          const SizedBox(height: 16),
-
           // Profile Details
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -120,6 +94,18 @@ class ProfileDetailScreen extends ConsumerWidget {
               ),
             ],
           ),
+
+          // BMI Card (if height and weight are available)
+          if (profile.bmi != null) ...[
+            const SizedBox(height: 20),
+            _buildBMICard(context),
+          ],
+
+          // Medication Card (if medication is available)
+          if (profile.medication != null && profile.medication!.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            _buildMedicationCard(context),
+          ],
         ],
       ),
     );
@@ -157,7 +143,125 @@ class ProfileDetailScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildHealthRecordsSection(BuildContext context) {
+  Widget _buildBMICard(BuildContext context) {
+    final bmi = profile.bmi!;
+    final category = profile.bmiCategory;
+
+    Color categoryColor;
+    if (bmi < 18.5) {
+      categoryColor = Colors.blue;
+    } else if (bmi < 25.0) {
+      categoryColor = Colors.green;
+    } else if (bmi < 30.0) {
+      categoryColor = Colors.orange;
+    } else {
+      categoryColor = Colors.red;
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(
+          12), // Reduced from 16 to 12 (25% reduction for 20% height reduction)
+      decoration: BoxDecoration(
+        color: categoryColor.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: categoryColor.withOpacity(0.3),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.monitor_weight,
+            size: 28, // Reduced from 32 to 28
+            color: categoryColor,
+          ),
+          const SizedBox(width: 12), // Reduced from 16 to 12
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'BMI: ${bmi.toStringAsFixed(1)}',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: categoryColor,
+                      ),
+                ),
+                Text(
+                  'Category: $category',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: categoryColor,
+                        fontWeight: FontWeight.w600,
+                      ),
+                ),
+                if (profile.height != null && profile.weight != null) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    'Height: ${profile.height!.toStringAsFixed(0)} cm | Weight: ${profile.weight!.toStringAsFixed(1)} kg',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withOpacity(0.7),
+                        ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMedicationCard(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppTheme.primaryColor.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: AppTheme.primaryColor.withOpacity(0.3),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(
+            Icons.medical_services,
+            size: 28,
+            color: AppTheme.primaryColor,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Medication',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.primaryColor,
+                      ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  profile.medication!,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHealthRecordsSection(BuildContext context, WidgetRef ref) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       child: DefaultTabController(
@@ -238,43 +342,55 @@ class ProfileDetailScreen extends ConsumerWidget {
         return sugarRecordsAsync.when(
           data: (records) => Column(
             children: [
-              // Graph Section for Sugar
-              Container(
-                height: 200,
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        const Icon(Icons.show_chart,
-                            color: AppTheme.primaryColor),
-                        const SizedBox(width: 8),
-                        Text(
-                          'HbA1c Trend',
-                          style:
-                              Theme.of(context).textTheme.titleSmall?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    Expanded(child: _buildSugarGraph(ref)),
-                  ],
-                ),
-              ),
-
-              // Divider
-              const Divider(height: 1),
-
-              // Records List Section
+              // Table Section for Sugar Records
               Expanded(
-                child: _buildRecordsList(
-                  records: records,
-                  recordType: 'Sugar',
-                  onAddRecord: () => _showSugarRecordForm(context, ref),
-                  recordBuilder: (record) => _buildSugarRecordTile(record, ref),
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              const Icon(Icons.table_chart,
+                                  color: AppTheme.primaryColor),
+                              const SizedBox(width: 8),
+                              Text(
+                                'HbA1c ${records.length} record${records.length != 1 ? 's' : ''}',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleSmall
+                                    ?.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                              ),
+                            ],
+                          ),
+                          ElevatedButton.icon(
+                            onPressed: () => _showSugarRecordForm(context, ref),
+                            icon: const Icon(Icons.add, size: 18),
+                            label: const Text('Add Record'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppTheme.primaryColor,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 8),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Expanded(
+                        child: _buildSugarTable(
+                          context,
+                          records.cast<SugarRecord>(),
+                          ref,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],
@@ -414,7 +530,7 @@ class ProfileDetailScreen extends ConsumerWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                '$recordType Records',
+                '${recordType == 'Blood Pressure' ? 'BP' : recordType == 'Lipid Profile' ? 'Lipids' : recordType} ${records.length} record${records.length != 1 ? 's' : ''}',
                 style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -472,53 +588,6 @@ class ProfileDetailScreen extends ConsumerWidget {
                 ),
         ),
       ],
-    );
-  }
-
-  Widget _buildSugarRecordTile(SugarRecord record, WidgetRef ref) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 8),
-      child: Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: Row(
-          children: [
-            // Main content area - takes most space
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'HbA1c (4–5.6%): ${record.hba1c.toStringAsFixed(1)}%',
-                    style: const TextStyle(
-                        fontSize: 14, fontWeight: FontWeight.w500),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    DateFormat('MMM dd, yyyy').format(record.recordDate),
-                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                  ),
-                ],
-              ),
-            ),
-            // 3-dot menu on the right
-            Builder(
-              builder: (context) => PopupMenuButton<String>(
-                onSelected: (value) {
-                  if (value == 'edit') {
-                    _showSugarRecordForm(context, ref, record: record);
-                  } else if (value == 'delete') {
-                    _deleteSugarRecord(context, ref, record);
-                  }
-                },
-                itemBuilder: (context) => [
-                  const PopupMenuItem(value: 'edit', child: Text('Edit')),
-                  const PopupMenuItem(value: 'delete', child: Text('Delete')),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 
@@ -654,71 +723,226 @@ class ProfileDetailScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildSugarGraph(WidgetRef ref) {
-    return Consumer(
-      builder: (context, ref, child) {
-        final sugarRecordsAsync =
-            ref.watch(sugarRecordNotifierProvider(profile.id!));
+  Widget _buildSugarTable(
+      BuildContext context, List<SugarRecord> records, WidgetRef ref) {
+    // Sort records by date descending (latest first)
+    final sortedRecords = List<SugarRecord>.from(records)
+      ..sort((a, b) => b.recordDate.compareTo(a.recordDate));
 
-        return sugarRecordsAsync.when(
-          data: (records) {
-            if (records.isEmpty) {
-              return const Center(
-                child: Text('No HbA1c data available'),
-              );
-            }
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
-            return GestureDetector(
-              onDoubleTap: () => _openFullScreenGraph(
-                context,
-                ref,
-                GraphType.sugar,
-                'HbA1c Levels',
-                records,
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: isDark ? Theme.of(context).cardColor : Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isDark ? Colors.grey.shade600 : Colors.grey.shade300,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: (isDark ? Colors.black : Colors.black).withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          // Fixed Header
+          Container(
+            decoration: BoxDecoration(
+              color: isDark
+                  ? AppTheme.primaryColor.withOpacity(0.2)
+                  : AppTheme.primaryColor.withOpacity(0.1),
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(12)),
+              border: Border(
+                bottom: BorderSide(
+                  color: isDark ? Colors.grey.shade600 : Colors.grey.shade300,
+                ),
               ),
-              child: Container(
-                height: 200,
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: Colors.grey[50],
-                  border: Border.all(color: Colors.grey[300]!),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(
-                      Icons.show_chart,
-                      size: 48,
-                      color: AppTheme.primaryColor,
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Row(
+                children: [
+                  Expanded(
+                    flex: 2,
+                    child: Text(
+                      'Date',
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color:
+                                isDark ? Colors.white : AppTheme.primaryColor,
+                          ),
                     ),
-                    const SizedBox(height: 16),
-                    const Text(
-                      'Double tap to open graph',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.grey,
-                      ),
+                  ),
+                  Expanded(
+                    flex: 2,
+                    child: Text(
+                      'HbA1c (4-5.6)',
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color:
+                                isDark ? Colors.white : AppTheme.primaryColor,
+                          ),
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      '${records.length} HbA1c records available',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey[600],
-                      ),
+                  ),
+                  const SizedBox(width: 40), // Space for menu button
+                ],
+              ),
+            ),
+          ),
+          // Scrollable Content
+          Expanded(
+            child: sortedRecords.isEmpty
+                ? Padding(
+                    padding: const EdgeInsets.all(32),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.table_chart,
+                          size: 48,
+                          color: isDark
+                              ? Colors.grey.shade400
+                              : Colors.grey.shade400,
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          'No HbA1c records yet—add one above to get started.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: isDark
+                                ? Colors.grey.shade300
+                                : Colors.grey.shade600,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-              ), // Close child SizedBox
-            ); // Close GestureDetector Sugar
-          },
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (error, stack) => Center(child: Text('Error: $error')),
-        );
-      },
+                  )
+                : ListView.builder(
+                    // Performance optimization for large lists
+                    physics: const BouncingScrollPhysics(), // Smooth scrolling
+                    cacheExtent: 200, // Cache items for better performance
+                    itemCount: sortedRecords.length,
+                    itemBuilder: (context, index) {
+                      final record = sortedRecords[index];
+                      final isLastItem = index == sortedRecords.length - 1;
+
+                      return Container(
+                        decoration: BoxDecoration(
+                          border: Border(
+                            bottom: isLastItem
+                                ? BorderSide.none
+                                : BorderSide(
+                                    color: isDark
+                                        ? Colors.grey.shade700
+                                        : Colors.grey.shade200,
+                                  ),
+                          ),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 12),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                flex: 2,
+                                child: Text(
+                                  DateFormat('dd-MMM-yy')
+                                      .format(record.recordDate),
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                    color: isDark
+                                        ? Colors.white.withOpacity(0.87)
+                                        : Colors.black.withOpacity(0.87),
+                                  ),
+                                ),
+                              ),
+                              Expanded(
+                                flex: 2,
+                                child: Text(
+                                  record.hba1c.toStringAsFixed(1),
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                    color: _getHbA1cColor(record.hba1c,
+                                        isDark: isDark),
+                                  ),
+                                ),
+                              ),
+                              // Three-dots menu
+                              SizedBox(
+                                width: 40,
+                                child: PopupMenuButton<String>(
+                                  icon: Icon(
+                                    Icons.more_vert,
+                                    color: isDark
+                                        ? Colors.grey.shade400
+                                        : Colors.grey.shade600,
+                                    size: 20,
+                                  ),
+                                  onSelected: (value) {
+                                    if (value == 'edit') {
+                                      _showSugarRecordForm(context, ref,
+                                          record: record);
+                                    } else if (value == 'delete') {
+                                      _deleteSugarRecord(context, ref, record);
+                                    }
+                                  },
+                                  itemBuilder: (context) => [
+                                    const PopupMenuItem(
+                                      value: 'edit',
+                                      child: Row(
+                                        children: [
+                                          Icon(Icons.edit, size: 18),
+                                          SizedBox(width: 8),
+                                          Text('Edit'),
+                                        ],
+                                      ),
+                                    ),
+                                    const PopupMenuItem(
+                                      value: 'delete',
+                                      child: Row(
+                                        children: [
+                                          Icon(Icons.delete,
+                                              size: 18, color: Colors.red),
+                                          SizedBox(width: 8),
+                                          Text('Delete',
+                                              style:
+                                                  TextStyle(color: Colors.red)),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+          ),
+        ],
+      ),
     );
+  }
+
+  // Helper method to get color based on HbA1c level
+  Color _getHbA1cColor(double hba1c, {bool isDark = false}) {
+    if (hba1c <= 5.6) {
+      return isDark ? Colors.green.shade300 : Colors.green.shade700;
+    } else if (hba1c <= 6.4) {
+      return isDark ? Colors.orange.shade300 : Colors.orange.shade700;
+    } else {
+      return isDark ? Colors.red.shade300 : Colors.red.shade700;
+    }
   }
 
   Widget _buildBPGraph(WidgetRef ref) {
@@ -987,9 +1211,9 @@ class ProfileDetailScreen extends ConsumerWidget {
       BuildContext context, WidgetRef ref, SugarRecord record) {
     _showDeleteConfirmationDialog(
       context: context,
-      title: 'Delete HbA1c Record',
+      title: 'Delete Record',
       content:
-          'Are you sure you want to delete this HbA1c record?\n\nDate: ${DateFormat('MMM d, y').format(record.recordDate)}',
+          'Delete record dated ${DateFormat('dd-MMM-yyyy').format(record.recordDate)}?',
       onConfirm: () {
         final notifier =
             ref.read(sugarRecordNotifierProvider(profile.id!).notifier);
