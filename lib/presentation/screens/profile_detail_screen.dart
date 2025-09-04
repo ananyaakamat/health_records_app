@@ -595,7 +595,7 @@ class ProfileDetailScreen extends ConsumerWidget {
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(10.0),
         child: Row(
           children: [
             Expanded(
@@ -764,7 +764,7 @@ class ProfileDetailScreen extends ConsumerWidget {
               ),
             ),
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
               child: Row(
                 children: [
                   Expanded(
@@ -847,7 +847,7 @@ class ProfileDetailScreen extends ConsumerWidget {
                         ),
                         child: Padding(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 12),
+                              horizontal: 16, vertical: 7),
                           child: Row(
                             children: [
                               Expanded(
