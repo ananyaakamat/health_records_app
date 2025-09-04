@@ -410,43 +410,55 @@ class ProfileDetailScreen extends ConsumerWidget {
         return bpRecordsAsync.when(
           data: (records) => Column(
             children: [
-              // Graph Section for BP
-              Container(
-                height: 200,
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        const Icon(Icons.show_chart,
-                            color: AppTheme.primaryColor),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Blood Pressure Trend',
-                          style:
-                              Theme.of(context).textTheme.titleSmall?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    Expanded(child: _buildBPGraph(ref)),
-                  ],
-                ),
-              ),
-
-              // Divider
-              const Divider(height: 1),
-
-              // Records List Section
+              // Table Section for BP Records
               Expanded(
-                child: _buildRecordsList(
-                  records: records,
-                  recordType: 'Blood Pressure',
-                  onAddRecord: () => _showBPRecordForm(context, ref),
-                  recordBuilder: (record) => _buildBPRecordTile(record, ref),
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              const Icon(Icons.table_chart,
+                                  color: AppTheme.primaryColor),
+                              const SizedBox(width: 8),
+                              Text(
+                                'BP ${records.length} record${records.length != 1 ? 's' : ''}',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleSmall
+                                    ?.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                              ),
+                            ],
+                          ),
+                          ElevatedButton.icon(
+                            onPressed: () => _showBPRecordForm(context, ref),
+                            icon: const Icon(Icons.add, size: 18),
+                            label: const Text('Add Record'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppTheme.primaryColor,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 8),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Expanded(
+                        child: _buildBPTable(
+                          context,
+                          records.cast<BPRecord>(),
+                          ref,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],
@@ -588,57 +600,6 @@ class ProfileDetailScreen extends ConsumerWidget {
                 ),
         ),
       ],
-    );
-  }
-
-  Widget _buildBPRecordTile(BPRecord record, WidgetRef ref) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 8),
-      child: Padding(
-        padding: const EdgeInsets.all(10.0),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Systolic (SBP) - mmHg (<120): ${record.systolic}',
-                    style: const TextStyle(fontSize: 14),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Diastolic (DBP) - mmHg (<80): ${record.diastolic}',
-                    style: const TextStyle(fontSize: 14),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    DateFormat('MMM dd, yyyy').format(record.recordDate),
-                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                  ),
-                ],
-              ),
-            ),
-            Builder(
-              builder: (context) => PopupMenuButton<String>(
-                onSelected: (value) {
-                  if (value == 'edit') {
-                    _showBPRecordForm(context, ref, record: record);
-                  } else if (value == 'delete') {
-                    _deleteBPRecord(context, ref, record);
-                  }
-                },
-                itemBuilder: (context) => [
-                  const PopupMenuItem(value: 'edit', child: Text('Edit')),
-                  const PopupMenuItem(value: 'delete', child: Text('Delete')),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 
@@ -945,70 +906,268 @@ class ProfileDetailScreen extends ConsumerWidget {
     }
   }
 
-  Widget _buildBPGraph(WidgetRef ref) {
-    return Consumer(
-      builder: (context, ref, child) {
-        final bpRecordsAsync = ref.watch(bpRecordNotifierProvider(profile.id!));
+  Widget _buildBPTable(
+      BuildContext context, List<BPRecord> records, WidgetRef ref) {
+    // Sort records by date descending (latest first)
+    final sortedRecords = List<BPRecord>.from(records)
+      ..sort((a, b) => b.recordDate.compareTo(a.recordDate));
 
-        return bpRecordsAsync.when(
-          data: (records) {
-            if (records.isEmpty) {
-              return const Center(
-                child: Text('No Blood Pressure data available'),
-              );
-            }
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
-            return GestureDetector(
-              onDoubleTap: () => _openFullScreenGraph(
-                context,
-                ref,
-                GraphType.bloodPressure,
-                'Blood Pressure',
-                records,
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: isDark ? Theme.of(context).cardColor : Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isDark ? Colors.grey.shade600 : Colors.grey.shade300,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: (isDark ? Colors.black : Colors.black).withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          // Fixed Header
+          Container(
+            decoration: BoxDecoration(
+              color: isDark
+                  ? AppTheme.primaryColor.withOpacity(0.2)
+                  : AppTheme.primaryColor.withOpacity(0.1),
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(12)),
+              border: Border(
+                bottom: BorderSide(
+                  color: isDark ? Colors.grey.shade600 : Colors.grey.shade300,
+                ),
               ),
-              child: Container(
-                height: 200,
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: Colors.grey[50],
-                  border: Border.all(color: Colors.grey[300]!),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(
-                      Icons.favorite,
-                      size: 48,
-                      color: Colors.red,
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              child: Row(
+                children: [
+                  Expanded(
+                    flex: 2,
+                    child: Text(
+                      'Date',
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color:
+                                isDark ? Colors.white : AppTheme.primaryColor,
+                          ),
                     ),
-                    const SizedBox(height: 16),
-                    const Text(
-                      'Double tap to open graph',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.grey,
-                      ),
+                  ),
+                  Expanded(
+                    flex: 2,
+                    child: Text(
+                      'SBP\n(mmHg)\n(<120)',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color:
+                                isDark ? Colors.white : AppTheme.primaryColor,
+                            fontSize: 12,
+                          ),
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      '${records.length} Blood Pressure records available',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey[600],
-                      ),
+                  ),
+                  Expanded(
+                    flex: 2,
+                    child: Text(
+                      'DBP\n(mmHg)\n(<80)',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color:
+                                isDark ? Colors.white : AppTheme.primaryColor,
+                            fontSize: 12,
+                          ),
                     ),
-                  ],
-                ),
-              ), // Close child SizedBox
-            ); // Close GestureDetector BP
-          },
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (error, stack) => Center(child: Text('Error: $error')),
-        );
-      },
+                  ),
+                  const SizedBox(width: 40), // Space for menu button
+                ],
+              ),
+            ),
+          ),
+          // Scrollable Content
+          Expanded(
+            child: sortedRecords.isEmpty
+                ? Padding(
+                    padding: const EdgeInsets.all(32),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.table_chart,
+                          size: 48,
+                          color: isDark
+                              ? Colors.grey.shade400
+                              : Colors.grey.shade400,
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          'No BP records yet—add one above to get started.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: isDark
+                                ? Colors.grey.shade300
+                                : Colors.grey.shade600,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                : ListView.builder(
+                    // Performance optimization for large lists
+                    physics: const BouncingScrollPhysics(), // Smooth scrolling
+                    cacheExtent: 200, // Cache items for better performance
+                    itemCount: sortedRecords.length,
+                    itemBuilder: (context, index) {
+                      final record = sortedRecords[index];
+                      final isLastItem = index == sortedRecords.length - 1;
+
+                      return Container(
+                        decoration: BoxDecoration(
+                          border: Border(
+                            bottom: isLastItem
+                                ? BorderSide.none
+                                : BorderSide(
+                                    color: isDark
+                                        ? Colors.grey.shade700
+                                        : Colors.grey.shade200,
+                                  ),
+                          ),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 7),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                flex: 2,
+                                child: Text(
+                                  DateFormat('dd-MMM-yy')
+                                      .format(record.recordDate),
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                    color: isDark
+                                        ? Colors.white.withOpacity(0.87)
+                                        : Colors.black.withOpacity(0.87),
+                                  ),
+                                ),
+                              ),
+                              Expanded(
+                                flex: 2,
+                                child: Text(
+                                  record.systolic.toString(),
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                    color: _getBPColor(
+                                        record.systolic, 'systolic',
+                                        isDark: isDark),
+                                  ),
+                                ),
+                              ),
+                              Expanded(
+                                flex: 2,
+                                child: Text(
+                                  record.diastolic.toString(),
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                    color: _getBPColor(
+                                        record.diastolic, 'diastolic',
+                                        isDark: isDark),
+                                  ),
+                                ),
+                              ),
+                              // Three-dots menu
+                              SizedBox(
+                                width: 40,
+                                child: PopupMenuButton<String>(
+                                  icon: Icon(
+                                    Icons.more_vert,
+                                    color: isDark
+                                        ? Colors.grey.shade400
+                                        : Colors.grey.shade600,
+                                    size: 20,
+                                  ),
+                                  onSelected: (value) {
+                                    if (value == 'edit') {
+                                      _showBPRecordForm(context, ref,
+                                          record: record);
+                                    } else if (value == 'delete') {
+                                      _deleteBPRecord(context, ref, record);
+                                    }
+                                  },
+                                  itemBuilder: (context) => [
+                                    const PopupMenuItem(
+                                      value: 'edit',
+                                      child: Row(
+                                        children: [
+                                          Icon(Icons.edit, size: 20),
+                                          SizedBox(width: 8),
+                                          Text('Edit'),
+                                        ],
+                                      ),
+                                    ),
+                                    const PopupMenuItem(
+                                      value: 'delete',
+                                      child: Row(
+                                        children: [
+                                          Icon(Icons.delete,
+                                              size: 20, color: Colors.red),
+                                          SizedBox(width: 8),
+                                          Text('Delete',
+                                              style:
+                                                  TextStyle(color: Colors.red)),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+          ),
+        ],
+      ),
     );
+  }
+
+  // Helper method to get color based on BP levels
+  Color _getBPColor(int value, String type, {bool isDark = false}) {
+    if (type == 'systolic') {
+      if (value < 120) {
+        return isDark ? Colors.green.shade300 : Colors.green.shade700;
+      } else if (value < 140) {
+        return isDark ? Colors.orange.shade300 : Colors.orange.shade700;
+      } else {
+        return isDark ? Colors.red.shade300 : Colors.red.shade700;
+      }
+    } else {
+      // diastolic
+      if (value < 80) {
+        return isDark ? Colors.green.shade300 : Colors.green.shade700;
+      } else if (value < 90) {
+        return isDark ? Colors.orange.shade300 : Colors.orange.shade700;
+      } else {
+        return isDark ? Colors.red.shade300 : Colors.red.shade700;
+      }
+    }
   }
 
   Widget _buildLipidGraph(WidgetRef ref) {
