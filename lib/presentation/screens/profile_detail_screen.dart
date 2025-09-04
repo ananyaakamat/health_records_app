@@ -479,43 +479,55 @@ class ProfileDetailScreen extends ConsumerWidget {
         return lipidRecordsAsync.when(
           data: (records) => Column(
             children: [
-              // Graph Section for Lipid
-              Container(
-                height: 200,
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        const Icon(Icons.show_chart,
-                            color: AppTheme.primaryColor),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Lipid Profile Trend',
-                          style:
-                              Theme.of(context).textTheme.titleSmall?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    Expanded(child: _buildLipidGraph(ref)),
-                  ],
-                ),
-              ),
-
-              // Divider
-              const Divider(height: 1),
-
-              // Records List Section
+              // Table Section for Lipid Records
               Expanded(
-                child: _buildRecordsList(
-                  records: records,
-                  recordType: 'Lipid Profile',
-                  onAddRecord: () => _showLipidRecordForm(context, ref),
-                  recordBuilder: (record) => _buildLipidRecordTile(record, ref),
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              const Icon(Icons.table_chart,
+                                  color: AppTheme.primaryColor),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Lipids ${records.length} record${records.length != 1 ? 's' : ''}',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleSmall
+                                    ?.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                              ),
+                            ],
+                          ),
+                          ElevatedButton.icon(
+                            onPressed: () => _showLipidRecordForm(context, ref),
+                            icon: const Icon(Icons.add, size: 18),
+                            label: const Text('Add Record'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppTheme.primaryColor,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 8),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Expanded(
+                        child: _buildLipidTable(
+                          context,
+                          records.cast<LipidRecord>(),
+                          ref,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],
@@ -524,163 +536,6 @@ class ProfileDetailScreen extends ConsumerWidget {
           error: (error, stack) => Center(child: Text('Error: $error')),
         );
       },
-    );
-  }
-
-  Widget _buildRecordsList<T>({
-    required List<T> records,
-    required String recordType,
-    required VoidCallback onAddRecord,
-    required Widget Function(T) recordBuilder,
-  }) {
-    return Column(
-      children: [
-        // Header with Add button
-        Container(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                '${recordType == 'Blood Pressure' ? 'BP' : recordType == 'Lipid Profile' ? 'Lipids' : recordType} ${records.length} record${records.length != 1 ? 's' : ''}',
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              ElevatedButton.icon(
-                onPressed: onAddRecord,
-                icon: const Icon(Icons.add),
-                label: const Text('Add'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primaryColor,
-                  foregroundColor: Colors.white,
-                ),
-              ),
-            ],
-          ),
-        ),
-        const Divider(height: 1),
-        // Records list
-        Expanded(
-          child: records.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.note_add,
-                        size: 64,
-                        color: Colors.grey.shade400,
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'No $recordType records yet',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.grey.shade600,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Tap the Add button to create your first record',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey.shade500,
-                        ),
-                      ),
-                    ],
-                  ),
-                )
-              : ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  itemCount: records.length,
-                  itemBuilder: (context, index) =>
-                      recordBuilder(records[index]),
-                ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildLipidRecordTile(LipidRecord record, WidgetRef ref) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 8),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Cholesterol Total (<200): ${record.cholesterolTotal}',
-                    style: const TextStyle(fontSize: 14),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Triglycerides (<150): ${record.triglycerides}',
-                    style: const TextStyle(fontSize: 14),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'HDL Cholesterol (40–60): ${record.hdl}',
-                    style: const TextStyle(fontSize: 14),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Non-HDL Cholesterol (<130): ${record.nonHdl}',
-                    style: const TextStyle(fontSize: 14),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'LDL Cholesterol (0–159): ${record.ldl}',
-                    style: const TextStyle(fontSize: 14),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'VLDL Cholesterol (0–40): ${record.vldl}',
-                    style: const TextStyle(fontSize: 14),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Cholesterol/HDL Ratio (0–5): ${record.cholHdlRatio}',
-                    style: const TextStyle(fontSize: 14),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    DateFormat('MMM dd, yyyy').format(record.recordDate),
-                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                  ),
-                ],
-              ),
-            ),
-            Builder(
-              builder: (context) => PopupMenuButton<String>(
-                onSelected: (value) {
-                  if (value == 'edit') {
-                    _showLipidRecordForm(context, ref, record: record);
-                  } else if (value == 'delete') {
-                    _deleteLipidRecord(context, ref, record);
-                  }
-                },
-                itemBuilder: (context) => [
-                  const PopupMenuItem(value: 'edit', child: Text('Edit')),
-                  const PopupMenuItem(value: 'delete', child: Text('Delete')),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 
@@ -1170,71 +1025,471 @@ class ProfileDetailScreen extends ConsumerWidget {
     }
   }
 
-  Widget _buildLipidGraph(WidgetRef ref) {
-    return Consumer(
-      builder: (context, ref, child) {
-        final lipidRecordsAsync =
-            ref.watch(lipidRecordNotifierProvider(profile.id!));
+  Widget _buildLipidTable(
+      BuildContext context, List<LipidRecord> records, WidgetRef ref) {
+    // Sort records by date descending (latest first)
+    final sortedRecords = List<LipidRecord>.from(records)
+      ..sort((a, b) => b.recordDate.compareTo(a.recordDate));
 
-        return lipidRecordsAsync.when(
-          data: (records) {
-            if (records.isEmpty) {
-              return const Center(
-                child: Text('No Lipid Profile data available'),
-              );
-            }
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
-            return GestureDetector(
-              onDoubleTap: () => _openFullScreenGraph(
-                context,
-                ref,
-                GraphType.lipidProfile,
-                'Lipid Profile',
-                records,
-              ),
-              child: Container(
-                height: 200,
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: Colors.grey[50],
-                  border: Border.all(color: Colors.grey[300]!),
-                  borderRadius: BorderRadius.circular(12),
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: isDark ? Theme.of(context).cardColor : Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isDark ? Colors.grey.shade600 : Colors.grey.shade300,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: (isDark ? Colors.black : Colors.black).withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          // Fixed Header with Horizontal Scroll
+          Container(
+            decoration: BoxDecoration(
+              color: isDark
+                  ? AppTheme.primaryColor.withOpacity(0.2)
+                  : AppTheme.primaryColor.withOpacity(0.1),
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(12)),
+              border: Border(
+                bottom: BorderSide(
+                  color: isDark ? Colors.grey.shade600 : Colors.grey.shade300,
                 ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
+              ),
+            ),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                child: Row(
                   children: [
-                    const Icon(
-                      Icons.water_drop,
-                      size: 48,
-                      color: Colors.blue,
-                    ),
-                    const SizedBox(height: 16),
-                    const Text(
-                      'Double tap to open graph',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.grey,
+                    // Date column (fixed width)
+                    SizedBox(
+                      width: 80,
+                      child: Text(
+                        'Date',
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color:
+                                  isDark ? Colors.white : AppTheme.primaryColor,
+                              fontSize: 12,
+                            ),
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      '${records.length} Lipid Profile records available',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey[600],
+                    // TC column
+                    SizedBox(
+                      width: 80,
+                      child: Text(
+                        'TC\n(<200)',
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color:
+                                  isDark ? Colors.white : AppTheme.primaryColor,
+                              fontSize: 12,
+                            ),
                       ),
                     ),
+                    // TG column
+                    SizedBox(
+                      width: 80,
+                      child: Text(
+                        'TG\n(<150)',
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color:
+                                  isDark ? Colors.white : AppTheme.primaryColor,
+                              fontSize: 12,
+                            ),
+                      ),
+                    ),
+                    // HDL-C column
+                    SizedBox(
+                      width: 80,
+                      child: Text(
+                        'HDL-C\n(40–60)',
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color:
+                                  isDark ? Colors.white : AppTheme.primaryColor,
+                              fontSize: 12,
+                            ),
+                      ),
+                    ),
+                    // Non-HDL-C column
+                    SizedBox(
+                      width: 90,
+                      child: Text(
+                        'Non-HDL-C\n(<130)',
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color:
+                                  isDark ? Colors.white : AppTheme.primaryColor,
+                              fontSize: 12,
+                            ),
+                      ),
+                    ),
+                    // LDL-C column
+                    SizedBox(
+                      width: 80,
+                      child: Text(
+                        'LDL-C\n(0–159)',
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color:
+                                  isDark ? Colors.white : AppTheme.primaryColor,
+                              fontSize: 12,
+                            ),
+                      ),
+                    ),
+                    // VLDL-C column
+                    SizedBox(
+                      width: 80,
+                      child: Text(
+                        'VLDL-C\n(0–40)',
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color:
+                                  isDark ? Colors.white : AppTheme.primaryColor,
+                              fontSize: 12,
+                            ),
+                      ),
+                    ),
+                    // TC/HDL Ratio column
+                    SizedBox(
+                      width: 90,
+                      child: Text(
+                        'TC/HDL\nRatio (0–5)',
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color:
+                                  isDark ? Colors.white : AppTheme.primaryColor,
+                              fontSize: 12,
+                            ),
+                      ),
+                    ),
+                    // Actions column
+                    const SizedBox(width: 40),
                   ],
                 ),
-              ), // Close child SizedBox
-            ); // Close GestureDetector Lipid
-          },
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (error, stack) => Center(child: Text('Error: $error')),
-        );
-      },
+              ),
+            ),
+          ),
+          // Scrollable Content
+          Expanded(
+            child: sortedRecords.isEmpty
+                ? Padding(
+                    padding: const EdgeInsets.all(32),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.table_chart,
+                          size: 48,
+                          color: isDark
+                              ? Colors.grey.shade400
+                              : Colors.grey.shade400,
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          'No lipid records yet—add one above to get started.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: isDark
+                                ? Colors.grey.shade300
+                                : Colors.grey.shade600,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                : ListView.builder(
+                    physics: const BouncingScrollPhysics(),
+                    cacheExtent: 200,
+                    itemCount: sortedRecords.length,
+                    itemBuilder: (context, index) {
+                      final record = sortedRecords[index];
+                      final isLastItem = index == sortedRecords.length - 1;
+
+                      return Container(
+                        decoration: BoxDecoration(
+                          border: Border(
+                            bottom: isLastItem
+                                ? BorderSide.none
+                                : BorderSide(
+                                    color: isDark
+                                        ? Colors.grey.shade700
+                                        : Colors.grey.shade200,
+                                  ),
+                          ),
+                        ),
+                        child: SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 7),
+                            child: Row(
+                              children: [
+                                // Date
+                                SizedBox(
+                                  width: 80,
+                                  child: Text(
+                                    DateFormat('dd-MMM-yy')
+                                        .format(record.recordDate),
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500,
+                                      color: isDark
+                                          ? Colors.white.withOpacity(0.87)
+                                          : Colors.black.withOpacity(0.87),
+                                    ),
+                                  ),
+                                ),
+                                // TC
+                                SizedBox(
+                                  width: 80,
+                                  child: Text(
+                                    record.cholesterolTotal.toString(),
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500,
+                                      color: _getLipidColor(
+                                          record.cholesterolTotal, 'tc',
+                                          isDark: isDark),
+                                    ),
+                                  ),
+                                ),
+                                // TG
+                                SizedBox(
+                                  width: 80,
+                                  child: Text(
+                                    record.triglycerides.toString(),
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500,
+                                      color: _getLipidColor(
+                                          record.triglycerides, 'tg',
+                                          isDark: isDark),
+                                    ),
+                                  ),
+                                ),
+                                // HDL-C
+                                SizedBox(
+                                  width: 80,
+                                  child: Text(
+                                    record.hdl.toString(),
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500,
+                                      color: _getLipidColor(record.hdl, 'hdl',
+                                          isDark: isDark),
+                                    ),
+                                  ),
+                                ),
+                                // Non-HDL-C
+                                SizedBox(
+                                  width: 90,
+                                  child: Text(
+                                    record.nonHdl.toString(),
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500,
+                                      color: _getLipidColor(
+                                          record.nonHdl, 'nonhdl',
+                                          isDark: isDark),
+                                    ),
+                                  ),
+                                ),
+                                // LDL-C
+                                SizedBox(
+                                  width: 80,
+                                  child: Text(
+                                    record.ldl.toString(),
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500,
+                                      color: _getLipidColor(record.ldl, 'ldl',
+                                          isDark: isDark),
+                                    ),
+                                  ),
+                                ),
+                                // VLDL-C
+                                SizedBox(
+                                  width: 80,
+                                  child: Text(
+                                    record.vldl.toString(),
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500,
+                                      color: _getLipidColor(record.vldl, 'vldl',
+                                          isDark: isDark),
+                                    ),
+                                  ),
+                                ),
+                                // TC/HDL Ratio
+                                SizedBox(
+                                  width: 90,
+                                  child: Text(
+                                    record.cholHdlRatio.toStringAsFixed(1),
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500,
+                                      color: _getLipidColor(
+                                          record.cholHdlRatio, 'ratio',
+                                          isDark: isDark),
+                                    ),
+                                  ),
+                                ),
+                                // Three-dots menu
+                                SizedBox(
+                                  width: 40,
+                                  child: PopupMenuButton<String>(
+                                    icon: Icon(
+                                      Icons.more_vert,
+                                      color: isDark
+                                          ? Colors.grey.shade400
+                                          : Colors.grey.shade600,
+                                      size: 20,
+                                    ),
+                                    onSelected: (value) {
+                                      if (value == 'edit') {
+                                        _showLipidRecordForm(context, ref,
+                                            record: record);
+                                      } else if (value == 'delete') {
+                                        _deleteLipidRecord(
+                                            context, ref, record);
+                                      }
+                                    },
+                                    itemBuilder: (context) => [
+                                      const PopupMenuItem(
+                                        value: 'edit',
+                                        child: Row(
+                                          children: [
+                                            Icon(Icons.edit, size: 20),
+                                            SizedBox(width: 8),
+                                            Text('Edit'),
+                                          ],
+                                        ),
+                                      ),
+                                      const PopupMenuItem(
+                                        value: 'delete',
+                                        child: Row(
+                                          children: [
+                                            Icon(Icons.delete,
+                                                size: 20, color: Colors.red),
+                                            SizedBox(width: 8),
+                                            Text('Delete',
+                                                style: TextStyle(
+                                                    color: Colors.red)),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+          ),
+        ],
+      ),
     );
+  }
+
+  // Helper method to get color based on lipid levels
+  Color _getLipidColor(num value, String type, {bool isDark = false}) {
+    switch (type) {
+      case 'tc': // Total Cholesterol (<200)
+        if (value < 200) {
+          return isDark ? Colors.green.shade300 : Colors.green.shade700;
+        } else if (value < 240) {
+          return isDark ? Colors.orange.shade300 : Colors.orange.shade700;
+        } else {
+          return isDark ? Colors.red.shade300 : Colors.red.shade700;
+        }
+      case 'tg': // Triglycerides (<150)
+        if (value < 150) {
+          return isDark ? Colors.green.shade300 : Colors.green.shade700;
+        } else if (value < 200) {
+          return isDark ? Colors.orange.shade300 : Colors.orange.shade700;
+        } else {
+          return isDark ? Colors.red.shade300 : Colors.red.shade700;
+        }
+      case 'hdl': // HDL-C (40-60)
+        if (value >= 40 && value <= 60) {
+          return isDark ? Colors.green.shade300 : Colors.green.shade700;
+        } else if (value >= 35 && value < 40) {
+          return isDark ? Colors.orange.shade300 : Colors.orange.shade700;
+        } else {
+          return isDark ? Colors.red.shade300 : Colors.red.shade700;
+        }
+      case 'nonhdl': // Non-HDL-C (<130)
+        if (value < 130) {
+          return isDark ? Colors.green.shade300 : Colors.green.shade700;
+        } else if (value < 160) {
+          return isDark ? Colors.orange.shade300 : Colors.orange.shade700;
+        } else {
+          return isDark ? Colors.red.shade300 : Colors.red.shade700;
+        }
+      case 'ldl': // LDL-C (0-159)
+        if (value <= 100) {
+          return isDark ? Colors.green.shade300 : Colors.green.shade700;
+        } else if (value <= 159) {
+          return isDark ? Colors.orange.shade300 : Colors.orange.shade700;
+        } else {
+          return isDark ? Colors.red.shade300 : Colors.red.shade700;
+        }
+      case 'vldl': // VLDL-C (0-40)
+        if (value <= 30) {
+          return isDark ? Colors.green.shade300 : Colors.green.shade700;
+        } else if (value <= 40) {
+          return isDark ? Colors.orange.shade300 : Colors.orange.shade700;
+        } else {
+          return isDark ? Colors.red.shade300 : Colors.red.shade700;
+        }
+      case 'ratio': // TC/HDL Ratio (0-5)
+        if (value <= 3.5) {
+          return isDark ? Colors.green.shade300 : Colors.green.shade700;
+        } else if (value <= 5.0) {
+          return isDark ? Colors.orange.shade300 : Colors.orange.shade700;
+        } else {
+          return isDark ? Colors.red.shade300 : Colors.red.shade700;
+        }
+      default:
+        return isDark
+            ? Colors.white.withOpacity(0.87)
+            : Colors.black.withOpacity(0.87);
+    }
   }
 
   void _showSugarRecordForm(BuildContext context, WidgetRef ref,
@@ -1449,26 +1704,6 @@ class ProfileDetailScreen extends ConsumerWidget {
             child: const Text('Delete'),
           ),
         ],
-      ),
-    );
-  }
-
-  void _openFullScreenGraph(
-    BuildContext context,
-    WidgetRef ref,
-    GraphType graphType,
-    String title,
-    List<dynamic> records,
-  ) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => FullScreenGraphScreen(
-          profile: profile,
-          graphType: graphType,
-          title: title,
-          records: records,
-        ),
       ),
     );
   }
