@@ -466,7 +466,8 @@ class BackupService {
         try {
           await testDb
               .rawQuery('SELECT name FROM sqlite_master WHERE type="table"');
-          await testDb.close();
+          // Don't close the database as the app needs to continue using it
+          // await testDb.close();
         } catch (e) {
           throw Exception('Restored database is corrupted: ${e.toString()}');
         }
@@ -570,7 +571,8 @@ class BackupService {
         try {
           await testDb
               .rawQuery('SELECT name FROM sqlite_master WHERE type="table"');
-          await testDb.close();
+          // Don't close the database as the app needs to continue using it
+          // await testDb.close();
         } catch (e) {
           throw Exception('Restored database is corrupted: ${e.toString()}');
         }

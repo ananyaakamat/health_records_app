@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/services/backup_service.dart';
 import '../../core/themes/app_theme.dart';
+import '../../core/database/database_helper.dart';
 import '../dialogs/password_restore_dialog.dart';
 import '../providers/profile_provider.dart';
 import '../providers/providers.dart';
@@ -37,7 +38,11 @@ class _BackupRestoreScreenState extends ConsumerState<BackupRestoreScreen> {
 
     setState(() {
       _autoBackupEnabled = settings['auto_backup_enabled'] ?? false;
-      _autoBackupFrequency = settings['auto_backup_frequency'] ?? 'daily';
+      // Ensure the frequency is one of the valid options
+      final frequency = settings['auto_backup_frequency'] ?? 'daily';
+      _autoBackupFrequency = (frequency == 'daily' || frequency == 'weekly')
+          ? frequency
+          : 'daily'; // Default to daily if invalid
     });
   }
 
@@ -108,11 +113,18 @@ class _BackupRestoreScreenState extends ConsumerState<BackupRestoreScreen> {
   }
 
   void _triggerAppRefresh() {
-    // Invalidate all providers to force fresh data reload
+    // Force database reinitialization and provider refresh
     try {
+      // Invalidate providers to force fresh data reload
       ref.invalidate(profileNotifierProvider);
-      // Force database to reinitialize
       ref.invalidate(databaseHelperProvider);
+
+      // Force database helper to reinitialize
+      DatabaseHelper.instance.reinitializeDatabase().then((_) {
+        debugPrint('Database reinitialized after restore');
+      }).catchError((error) {
+        debugPrint('Database reinitialize error: $error');
+      });
     } catch (e) {
       debugPrint('Provider invalidation error: $e');
     }
@@ -616,7 +628,8 @@ class _BackupRestoreScreenState extends ConsumerState<BackupRestoreScreen> {
                 trailing: DropdownButton<String>(
                   value: _autoBackupFrequency,
                   onChanged: (value) {
-                    if (value != null) {
+                    if (value != null &&
+                        (value == 'daily' || value == 'weekly')) {
                       setState(() {
                         _autoBackupFrequency = value;
                       });
