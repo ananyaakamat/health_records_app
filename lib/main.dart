@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/themes/app_theme.dart';
 import 'core/constants/app_constants.dart';
+import 'core/services/backup_service.dart';
 import 'presentation/screens/home_screen.dart';
 import 'presentation/screens/security/security_wrapper_screen.dart';
 import 'presentation/screens/security/security_setup_screen.dart';
@@ -16,6 +17,13 @@ void main() async {
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
+
+  // Initialize backup service
+  try {
+    await BackupService.instance.initialize();
+  } catch (e) {
+    debugPrint('Failed to initialize backup service: $e');
+  }
 
   runApp(const ProviderScope(child: HealthRecordsApp()));
 }

@@ -188,4 +188,12 @@ class DatabaseHelper {
     await databaseFactory.deleteDatabase(path);
     _database = null;
   }
+
+  Future<void> reinitializeDatabase() async {
+    if (_database != null) {
+      await _database!.close();
+      _database = null;
+    }
+    // The next call to database getter will reinitialize
+  }
 }

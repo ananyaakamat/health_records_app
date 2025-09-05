@@ -1,6 +1,8 @@
+import 'package:flutter/foundation.dart';
 import '../models/profile.dart';
 import '../../core/database/database_helper.dart';
 import '../../core/constants/app_constants.dart';
+import '../../core/services/backup_service.dart';
 
 class ProfileRepository {
   final DatabaseHelper _databaseHelper;
@@ -68,7 +70,12 @@ class ProfileRepository {
         profile.toMap(),
       );
 
-      return profile.copyWith(id: id);
+      final createdProfile = profile.copyWith(id: id);
+
+      // Trigger sync if enabled
+      _triggerSync();
+
+      return createdProfile;
     } catch (e) {
       throw Exception('Failed to create profile: $e');
     }
@@ -99,6 +106,9 @@ class ProfileRepository {
         throw Exception('Profile not found');
       }
 
+      // Trigger sync if enabled
+      _triggerSync();
+
       return updatedProfile;
     } catch (e) {
       throw Exception('Failed to update profile: $e');
@@ -116,9 +126,20 @@ class ProfileRepository {
       if (count == 0) {
         throw Exception('Profile not found');
       }
+
+      // Trigger sync if enabled
+      _triggerSync();
     } catch (e) {
       throw Exception('Failed to delete profile: $e');
     }
+  }
+
+  // Trigger backup in background
+  void _triggerSync() {
+    BackupService.instance.createBackup(isAutoBackup: true).catchError((error) {
+      // Log error but don't throw to avoid breaking main operation
+      debugPrint('Auto-backup error: $error');
+    });
   }
 
   Future<int> getProfileCount() async {

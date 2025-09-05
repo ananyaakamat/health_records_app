@@ -44,6 +44,13 @@ dependencies:
   local_auth: ^2.1.8
   crypto: ^3.0.3
 
+  # Backup, Restore & Storage
+  encrypt: ^5.0.1
+  flutter_secure_storage: ^9.0.0
+  path_provider: ^2.1.1
+  workmanager: ^0.5.2
+  permission_handler: ^11.0.1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

@@ -5,6 +5,7 @@ import '../../core/themes/app_theme.dart';
 import '../../core/services/security_service.dart';
 import '../providers/theme_provider.dart';
 import 'profile_list_screen.dart';
+import 'backup_restore_screen.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -239,6 +240,24 @@ class HomeScreen extends ConsumerWidget {
                 onTap: () {
                   Navigator.of(context).pop();
                   _showChangePinDialog(context);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.backup, color: AppTheme.primaryColor),
+                title: const Text(
+                  'Backup & Restore',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => const BackupRestoreScreen(),
+                    ),
+                  );
                 },
               ),
               ListTile(
