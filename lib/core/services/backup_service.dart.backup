@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:encrypt/encrypt.dart' as encrypt;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -12,26 +13,6 @@ import '../../data/models/profile.dart';
 import '../../data/models/sugar_record.dart';
 import '../../data/models/bp_record.dart';
 import '../../data/models/lipid_record.dart';
-
-// WorkManager callback for background backup task
-@pragma('vm:entry-point')
-void callbackDispatcher() {
-  Workmanager().executeTask((task, inputData) async {
-    try {
-      if (task == "autoBackupTask") {
-        final backupService = BackupService._();
-        await backupService.createBackup();
-        return Future.value(true);
-      }
-      return Future.value(false);
-    } catch (e) {
-      if (kDebugMode) {
-        print('Auto backup failed: $e');
-      }
-      return Future.value(false);
-    }
-  });
-}
 
 class BackupService {
   static const String _encryptionKeyKey = 'backup_encryption_key';
@@ -72,7 +53,7 @@ class BackupService {
 
   // Generate deterministic key from password for cross-device compatibility
   encrypt.Key _generateKeyFromPassword(String password) {
-    const salt = 'HealthRecords_Salt_2024'; // Fixed salt for consistency
+    final salt = 'HealthRecords_Salt_2024'; // Fixed salt for consistency
     final combined = password + salt;
 
     // Create a 32-byte key using repeated hashing
@@ -107,15 +88,11 @@ class BackupService {
 
   // Get encryption key
   Future<encrypt.Key> _getEncryptionKey() async {
-    // Use a simpler approach: generate key from app-specific string
-    // This makes backups portable across devices for the same app
-    const appKey = 'HealthRecordsApp2024SecureBackup';
-    final keyBytes = utf8.encode(appKey).take(32).toList();
-    // Pad to 32 bytes if needed
-    while (keyBytes.length < 32) {
-      keyBytes.add(0);
+    final keyString = await _secureStorage.read(key: _encryptionKeyKey);
+    if (keyString == null) {
+      throw Exception('Encryption key not found');
     }
-    return encrypt.Key(Uint8List.fromList(keyBytes));
+    return encrypt.Key(base64.decode(keyString));
   }
 
   // Get Downloads folder path
@@ -125,7 +102,7 @@ class BackupService {
       final directory = await getExternalStorageDirectory();
       if (directory != null) {
         // Navigate to the Downloads folder
-        const downloadsPath = '/storage/emulated/0/Download';
+        final downloadsPath = '/storage/emulated/0/Download';
         final downloadsDir = Directory(downloadsPath);
         if (await downloadsDir.exists()) {
           return downloadsDir;
@@ -303,10 +280,8 @@ class BackupService {
 
         return decrypted;
       } catch (e) {
-        if (e.toString().contains('pad block') ||
-            e.toString().contains('Invalid argument') ||
-            e.toString().contains('corrupted') ||
-            e.toString().contains('padding')) {
+        if (e.toString().contains('pad block corrupted') ||
+            e.toString().contains('Invalid or corrupted bad block')) {
           throw Exception(
               'CROSS_DEVICE_ERROR'); // Special marker for cross-device error
         }
@@ -350,6 +325,30 @@ class BackupService {
     } catch (e) {
       debugPrint('Password decryption error: $e');
       throw Exception('Invalid password or corrupted backup file');
+    }
+  }
+
+  // Validate backup file integrity
+  Future<bool> _validateBackupFile(File backupFile) async {
+    try {
+      if (!await backupFile.exists()) {
+        return false;
+      }
+
+      final fileSize = await backupFile.length();
+      if (fileSize < 32) {
+        return false;
+      }
+
+      final encryptedData = await backupFile.readAsBytes();
+
+      // Try to decrypt a small portion to validate
+      await _decryptData(encryptedData);
+
+      return true;
+    } catch (e) {
+      debugPrint('Backup file validation failed: $e');
+      return false;
     }
   }
 
@@ -447,7 +446,7 @@ class BackupService {
 
       // Create backup of current database before restore
       final currentDbFile = File(dbPath);
-      final tempBackupPath = '$dbPath.temp_backup';
+      final tempBackupPath = '${dbPath}.temp_backup';
       final tempBackupFile = File(tempBackupPath);
 
       if (await currentDbFile.exists()) {
@@ -551,7 +550,7 @@ class BackupService {
 
       // Create backup of current database before restore
       final currentDbFile = File(dbPath);
-      final tempBackupPath = '$dbPath.temp_backup';
+      final tempBackupPath = '${dbPath}.temp_backup';
       final tempBackupFile = File(tempBackupPath);
 
       if (await currentDbFile.exists()) {
@@ -978,4 +977,80 @@ class BackupInfo {
     required this.createdTime,
     required this.size,
   });
+}
+
+// Background task callback
+void callbackDispatcher() {
+  Workmanager().executeTask((task, inputData) async {
+    if (task == 'auto_backup_task') {
+      try {
+        final backupService = BackupService.instance;
+        await backupService.initialize();
+        final result = await backupService.createBackup(isAutoBackup: true);
+        return result.success;
+      } catch (e) {
+        debugPrint('Auto-backup failed: $e');
+        return false;
+      }
+    }
+    return false;
+  });
+
+  // Update backup settings
+  Future<void> updateBackupSettings(Map<String, dynamic> settings) async {
+    final prefs = await SharedPreferences.getInstance();
+
+    if (settings.containsKey('auto_backup_enabled')) {
+      await prefs.setBool(_autoBackupKey, settings['auto_backup_enabled']);
+    }
+
+    if (settings.containsKey('auto_backup_frequency')) {
+      await prefs.setString(
+          _autoBackupFrequencyKey, settings['auto_backup_frequency']);
+    }
+
+    // Re-schedule work manager with new settings
+    if (settings['auto_backup_enabled'] == true) {
+      await _scheduleAutoBackup(settings['auto_backup_frequency'] ?? 'daily');
+    } else {
+      await Workmanager().cancelByUniqueName('auto_backup');
+    }
+  }
+
+  // Delete a backup file
+  Future<BackupResult> deleteBackup(String backupId) async {
+    try {
+      final downloadsDir = await _getDownloadsDirectory();
+      final backupFolder =
+          Directory('${downloadsDir.path}/HealthRecordsBackups');
+
+      if (!await backupFolder.exists()) {
+        return BackupResult(
+          success: false,
+          message: 'Backup folder not found',
+        );
+      }
+
+      final backupFile = File('${backupFolder.path}/$backupId.hrbak');
+
+      if (!await backupFile.exists()) {
+        return BackupResult(
+          success: false,
+          message: 'Backup file not found',
+        );
+      }
+
+      await backupFile.delete();
+
+      return BackupResult(
+        success: true,
+        message: 'Backup deleted successfully',
+      );
+    } catch (e) {
+      return BackupResult(
+        success: false,
+        message: 'Failed to delete backup: $e',
+      );
+    }
+  }
 }

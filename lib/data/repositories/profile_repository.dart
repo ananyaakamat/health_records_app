@@ -139,6 +139,7 @@ class ProfileRepository {
     BackupService.instance.createBackup(isAutoBackup: true).catchError((error) {
       // Log error but don't throw to avoid breaking main operation
       debugPrint('Auto-backup error: $error');
+      return BackupResult(success: false, message: error.toString());
     });
   }
 

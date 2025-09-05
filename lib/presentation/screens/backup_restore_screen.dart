@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/services/backup_service.dart';
 import '../../core/themes/app_theme.dart';
 import '../dialogs/password_restore_dialog.dart';
+import '../providers/profile_provider.dart';
+import '../providers/providers.dart';
 
 class BackupRestoreScreen extends ConsumerStatefulWidget {
   const BackupRestoreScreen({super.key});
@@ -105,6 +107,51 @@ class _BackupRestoreScreenState extends ConsumerState<BackupRestoreScreen> {
     await _loadAvailableBackups();
   }
 
+  void _triggerAppRefresh() {
+    // Invalidate all providers to force fresh data reload
+    try {
+      ref.invalidate(profileNotifierProvider);
+      // Force database to reinitialize
+      ref.invalidate(databaseHelperProvider);
+    } catch (e) {
+      debugPrint('Provider invalidation error: $e');
+    }
+
+    // Show immediate feedback
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Row(
+            children: [
+              Icon(Icons.check_circle, color: Colors.white),
+              SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Restore complete! All data has been refreshed.',
+                  style: TextStyle(fontWeight: FontWeight.w500),
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: Colors.green.shade600,
+          duration: const Duration(seconds: 4),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+          action: SnackBarAction(
+            label: 'View Data',
+            textColor: Colors.white,
+            onPressed: () {
+              // Navigate back to home and trigger a rebuild
+              Navigator.of(context).popUntil((route) => route.isFirst);
+            },
+          ),
+        ),
+      );
+    }
+  }
+
   Future<void> _restoreBackup(BackupInfo backup) async {
     setState(() {
       _isLoading = true;
@@ -131,7 +178,7 @@ class _BackupRestoreScreenState extends ConsumerState<BackupRestoreScreen> {
 
         if (mounted) {
           final shouldTryPassword = await _showPasswordPromptDialog();
-          if (shouldTryPassword) {
+          if (shouldTryPassword && mounted) {
             showDialog(
               context: context,
               barrierDismissible: false,
@@ -139,7 +186,11 @@ class _BackupRestoreScreenState extends ConsumerState<BackupRestoreScreen> {
                 backup: backup,
                 onSuccess: () {
                   _loadBackupInfo();
-                  _showSuccessDialog('Backup restored successfully!');
+                  _refreshBackups();
+                  _showSuccessDialog(
+                      'Backup restored successfully! All data has been updated.');
+                  // Trigger app-wide refresh by popping to root and refreshing
+                  _triggerAppRefresh();
                 },
               ),
             );
@@ -149,8 +200,12 @@ class _BackupRestoreScreenState extends ConsumerState<BackupRestoreScreen> {
       }
 
       if (result.success) {
-        _showSuccessDialog('Backup restored successfully!');
+        _showSuccessDialog(
+            'Backup restored successfully! All data has been updated.');
         _loadBackupInfo();
+        _refreshBackups();
+        // Trigger app-wide refresh
+        _triggerAppRefresh();
       } else {
         _showErrorDialog(result.message);
       }
@@ -336,7 +391,7 @@ class _BackupRestoreScreenState extends ConsumerState<BackupRestoreScreen> {
           children: [
             Row(
               children: [
-                Icon(Icons.flash_on, color: AppTheme.primaryColor),
+                const Icon(Icons.flash_on, color: AppTheme.primaryColor),
                 const SizedBox(width: 8),
                 const Text(
                   'Quick Actions',
@@ -358,7 +413,8 @@ class _BackupRestoreScreenState extends ConsumerState<BackupRestoreScreen> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppTheme.primaryColor,
                       foregroundColor: Colors.white,
-                      minimumSize: const Size(0, 48),
+                      minimumSize: const Size(0, 50),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
                     ),
                   ),
                 ),
@@ -371,7 +427,8 @@ class _BackupRestoreScreenState extends ConsumerState<BackupRestoreScreen> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.blue.shade600,
                       foregroundColor: Colors.white,
-                      minimumSize: const Size(0, 48),
+                      minimumSize: const Size(0, 50),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
                     ),
                   ),
                 ),
@@ -393,7 +450,7 @@ class _BackupRestoreScreenState extends ConsumerState<BackupRestoreScreen> {
           children: [
             Row(
               children: [
-                Icon(Icons.info_outline, color: AppTheme.primaryColor),
+                const Icon(Icons.info_outline, color: AppTheme.primaryColor),
                 const SizedBox(width: 8),
                 const Text(
                   'Backup Information',
@@ -406,46 +463,107 @@ class _BackupRestoreScreenState extends ConsumerState<BackupRestoreScreen> {
             ),
             const SizedBox(height: 12),
             Container(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: Colors.blue.shade50,
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: Colors.blue.shade200),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Last Backup:',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: Colors.blue.shade700,
-                                fontSize: 13,
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              _lastBackupInfo ?? 'No backup created yet',
-                              style: const TextStyle(fontSize: 12),
-                            ),
-                          ],
+                  // Last Backup Section
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(8),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.grey.shade200,
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(
+                          Icons.access_time,
+                          color: Colors.blue.shade600,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Last Backup',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.blue.shade800,
+                                  fontSize: 16,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                _lastBackupInfo ?? 'No backup created yet',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  height: 1.4,
+                                  color: Colors.grey.shade700,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Retention: Keeps last 3 backups',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.blue.shade600,
+                  const SizedBox(height: 16),
+                  // Retention Policy Section
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.green.shade50,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.green.shade200),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.policy,
+                          color: Colors.green.shade600,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Retention Policy',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.green.shade800,
+                                  fontSize: 15,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Automatically keeps the last 3 backups and removes older ones',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: Colors.green.shade700,
+                                  height: 1.3,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
@@ -467,7 +585,7 @@ class _BackupRestoreScreenState extends ConsumerState<BackupRestoreScreen> {
           children: [
             Row(
               children: [
-                Icon(Icons.schedule, color: AppTheme.primaryColor),
+                const Icon(Icons.schedule, color: AppTheme.primaryColor),
                 const SizedBox(width: 8),
                 const Text(
                   'Auto Backup Settings',
@@ -504,16 +622,16 @@ class _BackupRestoreScreenState extends ConsumerState<BackupRestoreScreen> {
                       });
                     }
                   },
-                  items: [
-                    'daily',
-                    'weekly',
-                    'monthly',
-                  ].map((frequency) {
-                    return DropdownMenuItem(
-                      value: frequency,
-                      child: Text(frequency.toUpperCase()),
-                    );
-                  }).toList(),
+                  items: const [
+                    DropdownMenuItem(
+                      value: 'daily',
+                      child: Text('Daily'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'weekly',
+                      child: Text('Weekly'),
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -545,7 +663,7 @@ class _BackupRestoreScreenState extends ConsumerState<BackupRestoreScreen> {
           children: [
             Row(
               children: [
-                Icon(Icons.folder_outlined, color: AppTheme.primaryColor),
+                const Icon(Icons.folder_outlined, color: AppTheme.primaryColor),
                 const SizedBox(width: 8),
                 const Text(
                   'Available Backups',
@@ -624,9 +742,9 @@ class _BackupRestoreScreenState extends ConsumerState<BackupRestoreScreen> {
         borderRadius: BorderRadius.circular(8),
       ),
       child: ListTile(
-        leading: CircleAvatar(
+        leading: const CircleAvatar(
           backgroundColor: AppTheme.primaryColor,
-          child: const Icon(
+          child: Icon(
             Icons.backup,
             color: Colors.white,
             size: 20,
