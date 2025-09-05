@@ -151,6 +151,11 @@ class BackupService {
     return backupDir;
   }
 
+  // Public method to get backup directory for external access
+  Future<Directory> getBackupDirectory() async {
+    return await _createBackupFolder();
+  }
+
   // Create backup
   Future<BackupResult> createBackup({bool isAutoBackup = false}) async {
     try {

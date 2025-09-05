@@ -239,8 +239,12 @@ class _BackupRestoreScreenState extends ConsumerState<BackupRestoreScreen> {
     if (!confirmed) return;
 
     try {
-      // Simple file deletion approach
-      final backupFile = File(backup.id); // backup.id should be the full path
+      // Get the backup service to access the backup directory
+      final backupService = BackupService.instance;
+
+      // Find the backup file in the actual backup directory
+      final backupDir = await backupService.getBackupDirectory();
+      final backupFile = File('${backupDir.path}/${backup.id}');
 
       if (await backupFile.exists()) {
         await backupFile.delete();
