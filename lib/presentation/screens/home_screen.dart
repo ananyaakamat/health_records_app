@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/themes/app_theme.dart';
+import '../../core/services/security_service.dart';
 import '../providers/theme_provider.dart';
 import 'profile_list_screen.dart';
 
@@ -226,6 +227,21 @@ class HomeScreen extends ConsumerWidget {
                 },
               ),
               ListTile(
+                leading: const Icon(Icons.lock_outline,
+                    color: AppTheme.primaryColor),
+                title: const Text(
+                  'Change PIN',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  _showChangePinDialog(context);
+                },
+              ),
+              ListTile(
                 leading: Icon(
                   isDarkMode ? Icons.light_mode : Icons.dark_mode,
                   color: AppTheme.primaryColor,
@@ -361,6 +377,225 @@ class HomeScreen extends ConsumerWidget {
             child: const Text('OK'),
           ),
         ],
+      ),
+    );
+  }
+
+  void _showChangePinDialog(BuildContext context) {
+    final TextEditingController currentPinController = TextEditingController();
+    final TextEditingController newPinController = TextEditingController();
+    final TextEditingController confirmPinController = TextEditingController();
+    final SecurityService securityService = SecurityService();
+
+    bool obscureCurrentPin = true;
+    bool obscureNewPin = true;
+    bool obscureConfirmPin = true;
+    bool isLoading = false;
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: const Text(
+            'Change PIN',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Current PIN field
+                TextFormField(
+                  controller: currentPinController,
+                  obscureText: obscureCurrentPin,
+                  keyboardType: TextInputType.number,
+                  maxLength: 4,
+                  decoration: InputDecoration(
+                    labelText: 'Current PIN',
+                    prefixIcon: const Icon(Icons.lock_outline),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        obscureCurrentPin
+                            ? Icons.visibility
+                            : Icons.visibility_off,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          obscureCurrentPin = !obscureCurrentPin;
+                        });
+                      },
+                    ),
+                    border: const OutlineInputBorder(),
+                    counterText: '',
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // New PIN field
+                TextFormField(
+                  controller: newPinController,
+                  obscureText: obscureNewPin,
+                  keyboardType: TextInputType.number,
+                  maxLength: 4,
+                  decoration: InputDecoration(
+                    labelText: 'New PIN',
+                    prefixIcon: const Icon(Icons.lock),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        obscureNewPin ? Icons.visibility : Icons.visibility_off,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          obscureNewPin = !obscureNewPin;
+                        });
+                      },
+                    ),
+                    border: const OutlineInputBorder(),
+                    counterText: '',
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Confirm PIN field
+                TextFormField(
+                  controller: confirmPinController,
+                  obscureText: obscureConfirmPin,
+                  keyboardType: TextInputType.number,
+                  maxLength: 4,
+                  decoration: InputDecoration(
+                    labelText: 'Confirm New PIN',
+                    prefixIcon: const Icon(Icons.lock),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        obscureConfirmPin
+                            ? Icons.visibility
+                            : Icons.visibility_off,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          obscureConfirmPin = !obscureConfirmPin;
+                        });
+                      },
+                    ),
+                    border: const OutlineInputBorder(),
+                    counterText: '',
+                  ),
+                ),
+
+                if (isLoading) ...[
+                  const SizedBox(height: 16),
+                  const CircularProgressIndicator(),
+                ],
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: isLoading ? null : () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: isLoading
+                  ? null
+                  : () async {
+                      // Validate inputs
+                      if (currentPinController.text.length != 4) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                              content: Text('Please enter current PIN')),
+                        );
+                        return;
+                      }
+
+                      if (newPinController.text.length != 4) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                              content: Text('New PIN must be 4 digits')),
+                        );
+                        return;
+                      }
+
+                      if (newPinController.text != confirmPinController.text) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('PINs do not match')),
+                        );
+                        return;
+                      }
+
+                      setState(() {
+                        isLoading = true;
+                      });
+
+                      try {
+                        // Verify current PIN
+                        final isCurrentPinValid = await securityService
+                            .validatePin(currentPinController.text);
+
+                        if (!isCurrentPinValid) {
+                          setState(() {
+                            isLoading = false;
+                          });
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                  content: Text('Current PIN is incorrect')),
+                            );
+                          }
+                          return;
+                        }
+
+                        // Save new PIN
+                        final success = await securityService
+                            .setupPin(newPinController.text);
+
+                        if (!success) {
+                          setState(() {
+                            isLoading = false;
+                          });
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                  content: Text('Failed to save new PIN')),
+                            );
+                          }
+                          return;
+                        }
+
+                        setState(() {
+                          isLoading = false;
+                        });
+
+                        if (context.mounted) {
+                          Navigator.of(context).pop();
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('PIN changed successfully'),
+                              backgroundColor: Colors.green,
+                            ),
+                          );
+                        }
+                      } catch (e) {
+                        setState(() {
+                          isLoading = false;
+                        });
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Error: $e')),
+                          );
+                        }
+                      }
+                    },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primaryColor,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Save'),
+            ),
+          ],
+        ),
       ),
     );
   }

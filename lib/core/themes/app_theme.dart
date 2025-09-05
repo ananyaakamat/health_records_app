@@ -343,4 +343,20 @@ class AppTheme {
           end: Alignment.bottomRight,
         ),
       );
+
+  // Convenience getters for common styles
+  static Color get backgroundColor => lightBackgroundColor;
+  static Color get textPrimaryColor => lightPrimaryTextColor;
+  static Color get textSecondaryColor => lightSecondaryTextColor;
+  
+  static TextStyle get headlineStyle => const TextStyle(
+        color: lightPrimaryTextColor,
+        fontSize: 24,
+        fontWeight: FontWeight.w600,
+      );
+      
+  static TextStyle get bodyStyle => const TextStyle(
+        color: lightPrimaryTextColor,
+        fontSize: 16,
+      );
 }

@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/themes/app_theme.dart';
 import 'core/constants/app_constants.dart';
 import 'presentation/screens/home_screen.dart';
+import 'presentation/screens/security/security_wrapper_screen.dart';
+import 'presentation/screens/security/security_setup_screen.dart';
 import 'presentation/providers/theme_provider.dart';
 
 void main() async {
@@ -30,7 +32,11 @@ class HealthRecordsApp extends ConsumerWidget {
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: themeMode,
-      home: const HomeScreen(),
+      home: const SecurityWrapperScreen(),
+      routes: {
+        '/home': (context) => const HomeScreen(),
+        '/setup': (context) => const SecuritySetupScreen(),
+      },
       debugShowCheckedModeBanner: false,
     );
   }
