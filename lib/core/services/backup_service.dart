@@ -157,6 +157,23 @@ class BackupService {
       // Get database file
       final dbHelper = DatabaseHelper.instance;
       final db = await dbHelper.database;
+
+      // Check if at least one profile exists before creating backup
+      final profileCount =
+          await db.rawQuery('SELECT COUNT(*) as count FROM profiles');
+      final count = profileCount.isNotEmpty
+          ? (profileCount.first['count'] as int?) ?? 0
+          : 0;
+
+      if (count == 0) {
+        return BackupResult(
+          success: false,
+          message: isAutoBackup
+              ? 'Auto-backup skipped: No profiles to backup'
+              : 'No profiles found. Create a profile first before backing up.',
+        );
+      }
+
       final dbPath = db.path;
 
       // Create backup filename with 12-hour format
