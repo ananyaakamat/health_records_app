@@ -15,6 +15,8 @@ import '../../data/models/sugar_record.dart';
 import '../../data/models/bp_record.dart';
 import '../../data/models/lipid_record.dart';
 import 'package:intl/intl.dart';
+import 'home_screen.dart';
+import 'user_guide_screen.dart';
 
 enum GraphType { sugar, bloodPressure, lipidProfile }
 
@@ -30,8 +32,32 @@ class ProfileDetailScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.home),
+          onPressed: () {
+            Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute(builder: (context) => const HomeScreen()),
+              (route) => false,
+            );
+          },
+          tooltip: 'Home',
+        ),
         title: Text(profile.name),
         centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.help_outline),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) =>
+                      const UserGuideScreen(currentPage: 'Profile Detail'),
+                ),
+              );
+            },
+            tooltip: 'Help',
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         child: Column(

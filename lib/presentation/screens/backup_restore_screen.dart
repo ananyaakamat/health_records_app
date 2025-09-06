@@ -7,6 +7,8 @@ import '../../core/database/database_helper.dart';
 import '../dialogs/password_restore_dialog.dart';
 import '../providers/profile_provider.dart';
 import '../providers/providers.dart';
+import 'home_screen.dart';
+import 'user_guide_screen.dart';
 
 class BackupRestoreScreen extends ConsumerStatefulWidget {
   const BackupRestoreScreen({super.key});
@@ -374,10 +376,34 @@ class _BackupRestoreScreenState extends ConsumerState<BackupRestoreScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.home),
+          onPressed: () {
+            Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute(builder: (context) => const HomeScreen()),
+              (route) => false,
+            );
+          },
+          tooltip: 'Home',
+        ),
         title: const Text('Backup & Restore'),
         backgroundColor: AppTheme.primaryColor,
         foregroundColor: Colors.white,
         elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.help_outline),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) =>
+                      const UserGuideScreen(currentPage: 'Backup & Restore'),
+                ),
+              );
+            },
+            tooltip: 'Help',
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
