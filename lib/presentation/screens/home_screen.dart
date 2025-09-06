@@ -118,9 +118,9 @@ class HomeScreen extends ConsumerWidget {
                     const SizedBox(height: 16),
                     _buildFeatureCard(
                       context,
-                      icon: Icons.analytics,
-                      title: 'Visual Insights',
-                      subtitle: 'View your health data with interactive graphs',
+                      icon: Icons.backup,
+                      title: 'Backup and Restore',
+                      subtitle: 'Secure backup and restore of your health data',
                     ),
                   ],
                 ),

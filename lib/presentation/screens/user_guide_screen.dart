@@ -173,6 +173,26 @@ class UserGuideScreen extends StatelessWidget {
         ),
         _buildGuideItem(
           context,
+          'Backup Actions',
+          'Each backup shows three action icons below the timestamp: Restore (🔄), Share (📤), and Delete (🗑️). These icons are properly spaced for easy access.',
+        ),
+        _buildGuideItem(
+          context,
+          'Restore Backup',
+          'Tap the Restore icon (🔄) to restore data from a backup. This will replace your current data with the backup data.',
+        ),
+        _buildGuideItem(
+          context,
+          'Share Backup',
+          'Tap the Share icon (📤) to share backup files via WhatsApp, email, cloud storage, or other apps. Perfect for backing up to multiple locations.',
+        ),
+        _buildGuideItem(
+          context,
+          'Delete Backup',
+          'Tap the Delete icon (🗑️) to permanently remove a backup file. Use with caution as this cannot be undone.',
+        ),
+        _buildGuideItem(
+          context,
           'Cross-Device Restore',
           'When restoring on a different device, you may be prompted to enter a recovery password if the automatic restore fails.',
         ),
@@ -180,11 +200,6 @@ class UserGuideScreen extends StatelessWidget {
           context,
           'Backup Management',
           'The app keeps your last 3 backups automatically. Older backups are deleted to save space.',
-        ),
-        _buildGuideItem(
-          context,
-          'Share Backup',
-          'You can share backup files via email, cloud storage, or other apps for safekeeping.',
         ),
         _buildGuideItem(
           context,

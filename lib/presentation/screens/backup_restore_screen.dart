@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:share_plus/share_plus.dart';
 import '../../core/services/backup_service.dart';
 import '../../core/themes/app_theme.dart';
 import '../../core/database/database_helper.dart';
@@ -257,6 +258,48 @@ class _BackupRestoreScreenState extends ConsumerState<BackupRestoreScreen> {
       }
     } catch (e) {
       _showErrorDialog('Failed to delete backup: $e');
+    }
+  }
+
+  Future<void> _shareBackup(BackupInfo backup) async {
+    try {
+      final backupService = BackupService.instance;
+      final backupDir = await backupService.getBackupDirectory();
+      final backupFile = File('${backupDir.path}/${backup.id}');
+
+      if (!await backupFile.exists()) {
+        _showErrorDialog('Backup file not found');
+        return;
+      }
+
+      final result = await Share.shareXFiles(
+        [XFile(backupFile.path)],
+        text: 'Health Records Backup - ${backup.displayName}\n\n'
+            'Created: ${backup.createdTime.day}/${backup.createdTime.month}/${backup.createdTime.year}\n'
+            'Size: ${(backup.size / 1024).toStringAsFixed(1)} KB\n\n'
+            'Important: Keep this backup file safe. You may need to enter a recovery password when restoring on a different device.',
+        subject: 'Health Records Backup - ${backup.displayName}',
+      );
+
+      if (result.status == ShareResultStatus.success) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Row(
+                children: [
+                  Icon(Icons.check_circle, color: Colors.white),
+                  SizedBox(width: 8),
+                  Text('Backup shared successfully!'),
+                ],
+              ),
+              backgroundColor: Colors.green.shade600,
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      _showErrorDialog('Failed to share backup: $e');
     }
   }
 
@@ -786,53 +829,60 @@ class _BackupRestoreScreenState extends ConsumerState<BackupRestoreScreen> {
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        child: Row(
+        child: Column(
           children: [
-            // Leading icon
-            const CircleAvatar(
-              backgroundColor: AppTheme.primaryColor,
-              radius: 18,
-              child: Icon(
-                Icons.backup,
-                color: Colors.white,
-                size: 18,
-              ),
-            ),
-            const SizedBox(width: 12),
-            // Content (single line filename + details)
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Single line backup name
-                  Text(
-                    backup.displayName,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w500,
-                      fontSize: 14,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 2),
-                  // Compact info in single line
-                  Text(
-                    '${(backup.size / 1024).toStringAsFixed(1)} KB • ${backup.createdTime.day}/${backup.createdTime.month}/${backup.createdTime.year} ${backup.createdTime.hour > 12 ? backup.createdTime.hour - 12 : (backup.createdTime.hour == 0 ? 12 : backup.createdTime.hour)}:${backup.createdTime.minute.toString().padLeft(2, '0')} ${backup.createdTime.hour >= 12 ? 'PM' : 'AM'}',
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: Colors.grey.shade600,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
-            ),
-            // Compact trailing icons
+            // Top row with icon and backup info
             Row(
-              mainAxisSize: MainAxisSize.min,
               children: [
+                // Leading icon
+                const CircleAvatar(
+                  backgroundColor: AppTheme.primaryColor,
+                  radius: 18,
+                  child: Icon(
+                    Icons.backup,
+                    color: Colors.white,
+                    size: 18,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                // Content (backup name and details)
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Backup name
+                      Text(
+                        backup.displayName,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w500,
+                          fontSize: 14,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 2),
+                      // Size and timestamp info
+                      Text(
+                        '${(backup.size / 1024).toStringAsFixed(1)} KB • ${backup.createdTime.day}/${backup.createdTime.month}/${backup.createdTime.year} ${backup.createdTime.hour > 12 ? backup.createdTime.hour - 12 : (backup.createdTime.hour == 0 ? 12 : backup.createdTime.hour)}:${backup.createdTime.minute.toString().padLeft(2, '0')} ${backup.createdTime.hour >= 12 ? 'PM' : 'AM'}',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.grey.shade600,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            // Bottom row with action icons
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                // Restore icon
                 Material(
                   color: Colors.transparent,
                   child: InkWell(
@@ -848,7 +898,25 @@ class _BackupRestoreScreenState extends ConsumerState<BackupRestoreScreen> {
                     ),
                   ),
                 ),
-                const SizedBox(width: 4),
+                const SizedBox(width: 16),
+                // Share icon
+                Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(20),
+                    onTap: _isLoading ? null : () => _shareBackup(backup),
+                    child: Padding(
+                      padding: const EdgeInsets.all(8),
+                      child: Icon(
+                        Icons.share,
+                        color: Colors.blue.shade600,
+                        size: 20,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                // Delete icon
                 Material(
                   color: Colors.transparent,
                   child: InkWell(
