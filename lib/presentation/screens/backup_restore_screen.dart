@@ -405,11 +405,11 @@ class _BackupRestoreScreenState extends ConsumerState<BackupRestoreScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
+            const Row(
               children: [
-                const Icon(Icons.flash_on, color: AppTheme.primaryColor),
-                const SizedBox(width: 8),
-                const Text(
+                Icon(Icons.flash_on, color: AppTheme.primaryColor),
+                SizedBox(width: 8),
+                Text(
                   'Quick Actions',
                   style: TextStyle(
                     fontSize: 18,
@@ -464,11 +464,11 @@ class _BackupRestoreScreenState extends ConsumerState<BackupRestoreScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
+            const Row(
               children: [
-                const Icon(Icons.info_outline, color: AppTheme.primaryColor),
-                const SizedBox(width: 8),
-                const Text(
+                Icon(Icons.info_outline, color: AppTheme.primaryColor),
+                SizedBox(width: 8),
+                Text(
                   'Backup Information',
                   style: TextStyle(
                     fontSize: 18,
@@ -599,11 +599,11 @@ class _BackupRestoreScreenState extends ConsumerState<BackupRestoreScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
+            const Row(
               children: [
-                const Icon(Icons.schedule, color: AppTheme.primaryColor),
-                const SizedBox(width: 8),
-                const Text(
+                Icon(Icons.schedule, color: AppTheme.primaryColor),
+                SizedBox(width: 8),
+                Text(
                   'Auto Backup Settings',
                   style: TextStyle(
                     fontSize: 18,
@@ -758,59 +758,87 @@ class _BackupRestoreScreenState extends ConsumerState<BackupRestoreScreen> {
         border: Border.all(color: Colors.grey.shade300),
         borderRadius: BorderRadius.circular(8),
       ),
-      child: ListTile(
-        leading: const CircleAvatar(
-          backgroundColor: AppTheme.primaryColor,
-          child: Icon(
-            Icons.backup,
-            color: Colors.white,
-            size: 20,
-          ),
-        ),
-        title: Text(
-          backup.displayName,
-          style: const TextStyle(
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        child: Row(
           children: [
-            const SizedBox(height: 4),
-            Text(
-              'Size: ${(backup.size / 1024).toStringAsFixed(1)} KB',
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey.shade600,
+            // Leading icon
+            const CircleAvatar(
+              backgroundColor: AppTheme.primaryColor,
+              radius: 18,
+              child: Icon(
+                Icons.backup,
+                color: Colors.white,
+                size: 18,
               ),
             ),
-            Text(
-              'Created: ${backup.createdTime.day}/${backup.createdTime.month}/${backup.createdTime.year} ${backup.createdTime.hour > 12 ? backup.createdTime.hour - 12 : backup.createdTime.hour}:${backup.createdTime.minute.toString().padLeft(2, '0')} ${backup.createdTime.hour >= 12 ? 'PM' : 'AM'}',
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey.shade600,
+            const SizedBox(width: 12),
+            // Content (single line filename + details)
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Single line backup name
+                  Text(
+                    backup.displayName,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w500,
+                      fontSize: 14,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 2),
+                  // Compact info in single line
+                  Text(
+                    '${(backup.size / 1024).toStringAsFixed(1)} KB • ${backup.createdTime.day}/${backup.createdTime.month}/${backup.createdTime.year} ${backup.createdTime.hour > 12 ? backup.createdTime.hour - 12 : (backup.createdTime.hour == 0 ? 12 : backup.createdTime.hour)}:${backup.createdTime.minute.toString().padLeft(2, '0')} ${backup.createdTime.hour >= 12 ? 'PM' : 'AM'}',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: Colors.grey.shade600,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
               ),
             ),
-          ],
-        ),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            IconButton(
-              onPressed: _isLoading ? null : () => _restoreBackup(backup),
-              icon: Icon(
-                Icons.restore,
-                color: Colors.green.shade600,
-              ),
-              tooltip: 'Restore',
-            ),
-            IconButton(
-              onPressed: _isLoading ? null : () => _deleteBackup(backup),
-              icon: Icon(
-                Icons.delete,
-                color: Colors.red.shade600,
-              ),
-              tooltip: 'Delete',
+            // Compact trailing icons
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(20),
+                    onTap: _isLoading ? null : () => _restoreBackup(backup),
+                    child: Padding(
+                      padding: const EdgeInsets.all(8),
+                      child: Icon(
+                        Icons.restore,
+                        color: Colors.green.shade600,
+                        size: 20,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 4),
+                Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(20),
+                    onTap: _isLoading ? null : () => _deleteBackup(backup),
+                    child: Padding(
+                      padding: const EdgeInsets.all(8),
+                      child: Icon(
+                        Icons.delete,
+                        color: Colors.red.shade600,
+                        size: 20,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
         ),

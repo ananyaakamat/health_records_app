@@ -7,11 +7,6 @@ import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:workmanager/workmanager.dart';
 import '../database/database_helper.dart';
-import '../constants/app_constants.dart';
-import '../../data/models/profile.dart';
-import '../../data/models/sugar_record.dart';
-import '../../data/models/bp_record.dart';
-import '../../data/models/lipid_record.dart';
 
 // WorkManager callback for background backup task
 @pragma('vm:entry-point')
@@ -185,14 +180,6 @@ class BackupService {
       final backupFile = File(backupPath);
       await backupFile.writeAsBytes(encryptedData);
 
-      // Create JSON snapshot for selective restore
-      final jsonData = await _createJsonSnapshot();
-      final jsonFileName = 'backup_$formattedDate.json.enc';
-      final jsonPath = '${backupDir.path}/$jsonFileName';
-      final encryptedJsonData = await _encryptData(jsonData);
-      final jsonFile = File(jsonPath);
-      await jsonFile.writeAsBytes(encryptedJsonData);
-
       // Clean old backups (keep only latest 3)
       await _cleanOldBackups(backupDir);
 
@@ -211,49 +198,6 @@ class BackupService {
       debugPrint('Backup error: $e');
       return BackupResult(success: false, message: 'Backup failed: $e');
     }
-  }
-
-  // Create JSON snapshot for selective restore
-  Future<String> _createJsonSnapshot() async {
-    final dbHelper = DatabaseHelper.instance;
-    final db = await dbHelper.database;
-
-    // Get all data from database using raw queries
-    final profileMaps = await db.query('profiles');
-    final profiles = profileMaps.map((map) => Profile.fromMap(map)).toList();
-
-    final sugarMaps = await db.query('sugar_records');
-    final sugarRecords =
-        sugarMaps.map((map) => SugarRecord.fromMap(map)).toList();
-
-    final bpMaps = await db.query('bp_records');
-    final bpRecords = bpMaps.map((map) => BPRecord.fromMap(map)).toList();
-
-    final lipidMaps = await db.query('lipid_records');
-    final lipidRecords =
-        lipidMaps.map((map) => LipidRecord.fromMap(map)).toList();
-
-    // Get settings
-    final prefs = await SharedPreferences.getInstance();
-    final settings = {
-      'auto_backup_enabled': prefs.getBool(_autoBackupKey) ?? false,
-      'auto_backup_frequency':
-          prefs.getString(_autoBackupFrequencyKey) ?? 'daily',
-      'last_backup': prefs.getString(_lastBackupKey),
-    };
-
-    // Create JSON structure
-    final jsonData = {
-      'profiles': profiles.map((p) => p.toMap()).toList(),
-      'sugar': sugarRecords.map((s) => s.toMap()).toList(),
-      'bp': bpRecords.map((b) => b.toMap()).toList(),
-      'lipids': lipidRecords.map((l) => l.toMap()).toList(),
-      'settings': settings,
-      'backup_timestamp': DateTime.now().toIso8601String(),
-      'app_version': AppConstants.appVersion,
-    };
-
-    return jsonEncode(jsonData);
   }
 
   // Encrypt file
@@ -610,173 +554,6 @@ class BackupService {
     }
   }
 
-  // Selective restore
-  Future<BackupResult> selectiveRestore(
-      String backupId, List<String> selectedTables) async {
-    try {
-      final backupDir = await _createBackupFolder();
-      final jsonFileName = backupId.replaceAll('.db.enc', '.json.enc');
-      final jsonFile = File('${backupDir.path}/$jsonFileName');
-
-      if (!await jsonFile.exists()) {
-        throw Exception('JSON backup file not found for selective restore');
-      }
-
-      // Validate backup file size
-      final fileSize = await jsonFile.length();
-      if (fileSize < 32) {
-        throw Exception('JSON backup file appears to be corrupted (too small)');
-      }
-
-      // Read and decrypt JSON backup
-      final encryptedData = await jsonFile.readAsBytes();
-
-      if (encryptedData.length < 16) {
-        throw Exception('Invalid JSON backup file format (missing IV)');
-      }
-
-      final decryptedData = await _decryptData(encryptedData);
-
-      if (decryptedData.isEmpty) {
-        throw Exception(
-            'JSON backup decryption failed - file may be corrupted');
-      }
-
-      Map<String, dynamic> jsonData;
-      try {
-        jsonData = jsonDecode(decryptedData);
-      } catch (e) {
-        throw Exception('Invalid JSON backup format: ${e.toString()}');
-      }
-
-      if (jsonData.isEmpty) {
-        throw Exception('JSON backup contains no data');
-      }
-
-      final dbHelper = DatabaseHelper.instance;
-      final db = await dbHelper.database;
-
-      // Start transaction for atomic operation
-      await db.transaction((txn) async {
-        // Restore selected tables
-        for (final table in selectedTables) {
-          try {
-            switch (table) {
-              case 'profiles':
-                if (jsonData['profiles'] != null &&
-                    jsonData['profiles'] is List) {
-                  // Clear existing profiles
-                  await txn.delete('profiles');
-                  // Insert profiles from backup
-                  for (final profileData in jsonData['profiles']) {
-                    try {
-                      final profile = Profile.fromMap(profileData);
-                      await txn.insert('profiles', profile.toMap());
-                    } catch (e) {
-                      debugPrint('Error restoring profile record: $e');
-                      // Continue with other records
-                    }
-                  }
-                }
-                break;
-              case 'sugar':
-                if (jsonData['sugar'] != null && jsonData['sugar'] is List) {
-                  // Clear existing sugar records
-                  await txn.delete('sugar_records');
-                  // Insert sugar records from backup
-                  for (final recordData in jsonData['sugar']) {
-                    try {
-                      final record = SugarRecord.fromMap(recordData);
-                      await txn.insert('sugar_records', record.toMap());
-                    } catch (e) {
-                      debugPrint('Error restoring sugar record: $e');
-                      // Continue with other records
-                    }
-                  }
-                }
-                break;
-              case 'bp':
-                if (jsonData['bp'] != null && jsonData['bp'] is List) {
-                  // Clear existing BP records
-                  await txn.delete('bp_records');
-                  // Insert BP records from backup
-                  for (final recordData in jsonData['bp']) {
-                    try {
-                      final record = BPRecord.fromMap(recordData);
-                      await txn.insert('bp_records', record.toMap());
-                    } catch (e) {
-                      debugPrint('Error restoring BP record: $e');
-                      // Continue with other records
-                    }
-                  }
-                }
-                break;
-              case 'lipids':
-                if (jsonData['lipids'] != null && jsonData['lipids'] is List) {
-                  // Clear existing lipid records
-                  await txn.delete('lipid_records');
-                  // Insert lipid records from backup
-                  for (final recordData in jsonData['lipids']) {
-                    try {
-                      final record = LipidRecord.fromMap(recordData);
-                      await txn.insert('lipid_records', record.toMap());
-                    } catch (e) {
-                      debugPrint('Error restoring lipid record: $e');
-                      // Continue with other records
-                    }
-                  }
-                }
-                break;
-              case 'settings':
-                if (jsonData['settings'] != null) {
-                  // Settings restoration handled separately
-                  // as it doesn't involve database transactions
-                }
-                break;
-            }
-          } catch (e) {
-            debugPrint('Error restoring table $table: $e');
-            // Continue with other tables
-          }
-        }
-      });
-
-      // Restore settings outside of transaction
-      if (selectedTables.contains('settings') && jsonData['settings'] != null) {
-        try {
-          await _restoreSettings(jsonData['settings']);
-        } catch (e) {
-          debugPrint('Error restoring settings: $e');
-        }
-      }
-
-      return BackupResult(
-        success: true,
-        message: 'Selected data restored successfully',
-        timestamp: DateTime.now(),
-      );
-    } catch (e) {
-      debugPrint('Selective restore error: $e');
-      return BackupResult(
-          success: false,
-          message:
-              'Selective restore failed: ${e.toString().replaceAll('Exception: ', '')}');
-    }
-  }
-
-  // Restore settings
-  Future<void> _restoreSettings(Map<String, dynamic> settings) async {
-    final prefs = await SharedPreferences.getInstance();
-
-    if (settings.containsKey('auto_backup_enabled')) {
-      await prefs.setBool(_autoBackupKey, settings['auto_backup_enabled']);
-    }
-    if (settings.containsKey('auto_backup_frequency')) {
-      await prefs.setString(
-          _autoBackupFrequencyKey, settings['auto_backup_frequency']);
-    }
-  }
-
   // Get backup settings
   Future<Map<String, dynamic>> getBackupSettings() async {
     final prefs = await SharedPreferences.getInstance();
@@ -854,6 +631,18 @@ class BackupService {
   Future<void> _cleanOldBackups(Directory backupDir) async {
     try {
       final files = await backupDir.list().toList();
+
+      // Clean up any existing JSON files (legacy from previous versions)
+      final jsonFiles = files
+          .where((file) => file is File && file.path.endsWith('.json.enc'))
+          .cast<File>()
+          .toList();
+
+      for (final jsonFile in jsonFiles) {
+        await jsonFile.delete();
+        debugPrint('Removed legacy JSON backup file: ${jsonFile.path}');
+      }
+
       final backupFiles = files
           .where((file) => file is File && file.path.endsWith('.db.enc'))
           .cast<File>()
@@ -868,11 +657,6 @@ class BackupService {
         final filesToDelete = backupFiles.take(backupFiles.length - 3);
         for (final file in filesToDelete) {
           await file.delete();
-          // Also delete corresponding JSON file
-          final jsonFile = File(file.path.replaceAll('.db.enc', '.json.enc'));
-          if (await jsonFile.exists()) {
-            await jsonFile.delete();
-          }
         }
       }
     } catch (e) {
