@@ -13,17 +13,35 @@ import '../database/database_helper.dart';
 void callbackDispatcher() {
   Workmanager().executeTask((task, inputData) async {
     try {
-      if (task == "autoBackupTask") {
+      if (kDebugMode) {
+        print('WorkManager task received: $task');
+      }
+      if (task == "auto_backup_task") {
+        if (kDebugMode) {
+          print('Executing auto backup task...');
+        }
         final backupService = BackupService._();
-        await backupService.createBackup();
+        final result = await backupService.createBackup(isAutoBackup: true);
+
+        if (kDebugMode) {
+          print(
+              'Auto backup result: ${result.success ? "SUCCESS" : "SKIPPED"} - ${result.message}');
+        }
+
+        // Always return true for auto backup to keep the periodic task running
+        // Even if backup was skipped due to no profiles, the task should continue
         return Future.value(true);
+      }
+      if (kDebugMode) {
+        print('Unknown task: $task');
       }
       return Future.value(false);
     } catch (e) {
       if (kDebugMode) {
         print('Auto backup failed: $e');
       }
-      return Future.value(false);
+      // Return true even on error to keep periodic task running
+      return Future.value(true);
     }
   });
 }
@@ -574,51 +592,121 @@ class BackupService {
   // Get backup settings
   Future<Map<String, dynamic>> getBackupSettings() async {
     final prefs = await SharedPreferences.getInstance();
+    var frequency = prefs.getString(_autoBackupFrequencyKey) ?? 'daily';
+
+    // Clean up legacy 2min frequency setting
+    if (frequency == '2min') {
+      frequency = 'daily';
+      await prefs.setString(_autoBackupFrequencyKey, frequency);
+      if (kDebugMode) {
+        print('Cleaned up legacy 2min frequency setting to daily');
+      }
+    }
+
     return {
       'auto_backup_enabled': prefs.getBool(_autoBackupKey) ?? false,
-      'auto_backup_frequency':
-          prefs.getString(_autoBackupFrequencyKey) ?? 'daily',
+      'auto_backup_frequency': frequency,
       'last_backup': prefs.getString(_lastBackupKey),
     };
   }
 
   // Get last backup info
   Future<String?> getLastBackupInfo() async {
-    final prefs = await SharedPreferences.getInstance();
-    final lastBackupStr = prefs.getString(_lastBackupKey);
+    try {
+      // Get backup directory
+      final backupDir = await _createBackupFolder();
 
-    if (lastBackupStr != null) {
-      final lastBackup = DateTime.parse(lastBackupStr);
-      final now = DateTime.now();
-      final difference = now.difference(lastBackup);
+      // Get all backup files
+      final files = await backupDir.list().toList();
+      final backupFiles = files
+          .where((file) => file is File && file.path.endsWith('.db.enc'))
+          .cast<File>()
+          .toList();
 
-      if (difference.inDays > 0) {
-        return 'Last backup: ${difference.inDays} days ago';
-      } else if (difference.inHours > 0) {
-        return 'Last backup: ${difference.inHours} hours ago';
-      } else {
-        return 'Last backup: ${difference.inMinutes} minutes ago';
+      if (backupFiles.isEmpty) {
+        return null;
       }
-    }
 
-    return null;
+      // Sort files by modification time (newest first)
+      backupFiles
+          .sort((a, b) => b.lastModifiedSync().compareTo(a.lastModifiedSync()));
+
+      // Get the most recent backup file
+      final lastBackupFile = backupFiles.first;
+      final lastModified = lastBackupFile.lastModifiedSync();
+      final now = DateTime.now();
+      final difference = now.difference(lastModified);
+
+      String timeAgo;
+      if (difference.inDays > 0) {
+        timeAgo =
+            '${difference.inDays} day${difference.inDays == 1 ? '' : 's'} ago';
+      } else if (difference.inHours > 0) {
+        timeAgo =
+            '${difference.inHours} hour${difference.inHours == 1 ? '' : 's'} ago';
+      } else if (difference.inMinutes > 0) {
+        timeAgo =
+            '${difference.inMinutes} minute${difference.inMinutes == 1 ? '' : 's'} ago';
+      } else {
+        timeAgo = 'Just now';
+      }
+
+      return 'Last backup: $timeAgo';
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error getting last backup info: $e');
+      }
+      // Fallback to SharedPreferences method if file checking fails
+      final prefs = await SharedPreferences.getInstance();
+      final lastBackupStr = prefs.getString(_lastBackupKey);
+
+      if (lastBackupStr != null) {
+        final lastBackup = DateTime.parse(lastBackupStr);
+        final now = DateTime.now();
+        final difference = now.difference(lastBackup);
+
+        if (difference.inDays > 0) {
+          return 'Last backup: ${difference.inDays} day${difference.inDays == 1 ? '' : 's'} ago';
+        } else if (difference.inHours > 0) {
+          return 'Last backup: ${difference.inHours} hour${difference.inHours == 1 ? '' : 's'} ago';
+        } else {
+          return 'Last backup: ${difference.inMinutes} minute${difference.inMinutes == 1 ? '' : 's'} ago';
+        }
+      }
+
+      return null;
+    }
   }
 
   // Auto-backup settings
   Future<void> setAutoBackup(bool enabled, String frequency) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_autoBackupKey, enabled);
+
+    // Clean up legacy 2min frequency setting
+    if (frequency == '2min') {
+      frequency = 'daily';
+      if (kDebugMode) {
+        print('Converting legacy 2min frequency to daily');
+      }
+    }
+
     await prefs.setString(_autoBackupFrequencyKey, frequency);
+
+    // Always cancel existing tasks first
+    await Workmanager().cancelByUniqueName('auto_backup');
 
     if (enabled) {
       await _scheduleAutoBackup(frequency);
-    } else {
-      await Workmanager().cancelByUniqueName('auto_backup');
     }
   }
 
   // Schedule auto-backup
   Future<void> _scheduleAutoBackup(String frequency) async {
+    if (kDebugMode) {
+      print('Scheduling auto backup with frequency: $frequency');
+    }
+
     Duration interval;
     switch (frequency) {
       case 'hourly':
@@ -634,14 +722,27 @@ class BackupService {
         interval = const Duration(days: 1);
     }
 
+    if (kDebugMode) {
+      print(
+          'Registering periodic task with interval: ${interval.inMinutes} minutes');
+    }
+
     await Workmanager().registerPeriodicTask(
       'auto_backup',
       'auto_backup_task',
       frequency: interval,
       constraints: Constraints(
         networkType: NetworkType.not_required,
+        requiresBatteryNotLow: false,
+        requiresCharging: false,
+        requiresDeviceIdle: false,
+        requiresStorageNotLow: false,
       ),
     );
+
+    if (kDebugMode) {
+      print('Auto backup task registered successfully');
+    }
   }
 
   // Clean old backups (keep only latest 10)
@@ -756,6 +857,25 @@ class BackupService {
         success: false,
         message: 'Failed to delete backup: $e',
       );
+    }
+  }
+
+  // Force reset auto backup system - cancel all tasks and clear settings
+  Future<void> forceResetAutoBackup() async {
+    try {
+      // Cancel all WorkManager tasks
+      await Workmanager().cancelAll();
+
+      // Also specifically cancel by unique name
+      await Workmanager().cancelByUniqueName('auto_backup');
+
+      if (kDebugMode) {
+        print('All auto backup tasks cancelled and reset');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error during force reset: $e');
+      }
     }
   }
 }

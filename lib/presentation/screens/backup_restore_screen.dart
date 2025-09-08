@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
@@ -26,6 +28,7 @@ class _BackupRestoreScreenState extends ConsumerState<BackupRestoreScreen> {
   String? _lastBackupInfo;
   List<BackupInfo> _availableBackups = [];
   bool _backupsLoaded = false;
+  Timer? _refreshTimer;
 
   @override
   void initState() {
@@ -33,20 +36,45 @@ class _BackupRestoreScreenState extends ConsumerState<BackupRestoreScreen> {
     _loadSettings();
     _loadBackupInfo();
     _loadAvailableBackups(); // Load backups immediately
+
+    // Start timer to refresh backup info every minute
+    _refreshTimer = Timer.periodic(const Duration(minutes: 1), (timer) {
+      _loadBackupInfo();
+    });
+  }
+
+  @override
+  void dispose() {
+    _refreshTimer?.cancel();
+    super.dispose();
   }
 
   Future<void> _loadSettings() async {
     final backupService = BackupService.instance;
     final settings = await backupService.getBackupSettings();
 
+    final originalFrequency = settings['auto_backup_frequency'] ?? 'daily';
+    final wasLegacyFrequency = originalFrequency == '2min';
+
     setState(() {
       _autoBackupEnabled = settings['auto_backup_enabled'] ?? false;
       // Ensure the frequency is one of the valid options
-      final frequency = settings['auto_backup_frequency'] ?? 'daily';
-      _autoBackupFrequency = (frequency == 'daily' || frequency == 'weekly')
-          ? frequency
-          : 'daily'; // Default to daily if invalid
+      _autoBackupFrequency =
+          (originalFrequency == 'daily' || originalFrequency == 'weekly')
+              ? originalFrequency
+              : 'daily'; // Default to daily if invalid or was 2min
     });
+
+    // If we had a legacy frequency and auto backup is enabled, restart with new settings
+    if (wasLegacyFrequency && _autoBackupEnabled) {
+      if (kDebugMode) {
+        print(
+            'Detected legacy 2min frequency, restarting auto backup with daily');
+      }
+      await backupService.forceResetAutoBackup();
+      await backupService.setAutoBackup(
+          _autoBackupEnabled, _autoBackupFrequency);
+    }
   }
 
   Future<void> _loadBackupInfo() async {
