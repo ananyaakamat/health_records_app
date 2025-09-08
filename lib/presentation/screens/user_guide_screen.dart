@@ -184,7 +184,7 @@ class UserGuideScreen extends StatelessWidget {
         _buildGuideItem(
           context,
           'Share Backup',
-          'Tap the Share icon (📤) to share backup files via WhatsApp, email, cloud storage, or other apps. Perfect for backing up to multiple locations.',
+          'Tap the Share icon (📤) to share backup files via WhatsApp, email, cloud storage, or other apps. Perfect for backing up to multiple locations.\n\nTo restore a shared backup file: Create a folder named "HealthRecords_Backups" in your Downloads folder and place the backup file there before using the restore function.',
         ),
         _buildGuideItem(
           context,
