@@ -835,6 +835,7 @@ class ProfileDetailScreen extends ConsumerWidget {
                     flex: 2,
                     child: Text(
                       'Date',
+                      textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.titleSmall?.copyWith(
                             fontWeight: FontWeight.bold,
                             color:
