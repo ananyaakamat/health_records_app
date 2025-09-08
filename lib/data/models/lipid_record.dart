@@ -3,12 +3,12 @@ import 'package:intl/intl.dart';
 class LipidRecord {
   final int? id;
   final int profileId;
-  final int cholesterolTotal;
-  final int triglycerides;
-  final int hdl;
-  final int nonHdl;
-  final int ldl;
-  final int vldl;
+  final double cholesterolTotal;
+  final double triglycerides;
+  final double hdl;
+  final double? nonHdl; // Made optional
+  final double ldl;
+  final double vldl;
   final double cholHdlRatio;
   final DateTime recordDate;
   final DateTime createdAt;
@@ -19,7 +19,7 @@ class LipidRecord {
     required this.cholesterolTotal,
     required this.triglycerides,
     required this.hdl,
-    required this.nonHdl,
+    this.nonHdl, // Made optional
     required this.ldl,
     required this.vldl,
     required this.cholHdlRatio,
@@ -30,12 +30,12 @@ class LipidRecord {
   LipidRecord copyWith({
     int? id,
     int? profileId,
-    int? cholesterolTotal,
-    int? triglycerides,
-    int? hdl,
-    int? nonHdl,
-    int? ldl,
-    int? vldl,
+    double? cholesterolTotal,
+    double? triglycerides,
+    double? hdl,
+    double? nonHdl,
+    double? ldl,
+    double? vldl,
     double? cholHdlRatio,
     DateTime? recordDate,
     DateTime? createdAt,
@@ -75,12 +75,12 @@ class LipidRecord {
     return LipidRecord(
       id: map['id']?.toInt(),
       profileId: map['profile_id']?.toInt() ?? 0,
-      cholesterolTotal: map['cholesterol_total']?.toInt() ?? 0,
-      triglycerides: map['triglycerides']?.toInt() ?? 0,
-      hdl: map['hdl']?.toInt() ?? 0,
-      nonHdl: map['non_hdl']?.toInt() ?? 0,
-      ldl: map['ldl']?.toInt() ?? 0,
-      vldl: map['vldl']?.toInt() ?? 0,
+      cholesterolTotal: map['cholesterol_total']?.toDouble() ?? 0.0,
+      triglycerides: map['triglycerides']?.toDouble() ?? 0.0,
+      hdl: map['hdl']?.toDouble() ?? 0.0,
+      nonHdl: map['non_hdl']?.toDouble(), // Allow null for optional field
+      ldl: map['ldl']?.toDouble() ?? 0.0,
+      vldl: map['vldl']?.toDouble() ?? 0.0,
       cholHdlRatio: map['chol_hdl_ratio']?.toDouble() ?? 0.0,
       recordDate: DateTime.parse(map['record_date']),
       createdAt: DateTime.parse(map['created_at']),
@@ -93,7 +93,7 @@ class LipidRecord {
   bool get isCholesterolNormal => cholesterolTotal < 200;
   bool get isTriglyceridesNormal => triglycerides < 150;
   bool get isHdlNormal => hdl >= 40 && hdl <= 60;
-  bool get isNonHdlNormal => nonHdl < 130;
+  bool get isNonHdlNormal => nonHdl != null && nonHdl! < 130;
   bool get isLdlNormal => ldl <= 159;
   bool get isVldlNormal => vldl <= 40;
   bool get isCholHdlRatioNormal => cholHdlRatio <= 5.0;
@@ -165,7 +165,7 @@ class LipidRecord {
         cholesterolTotal.hashCode ^
         triglycerides.hashCode ^
         hdl.hashCode ^
-        nonHdl.hashCode ^
+        (nonHdl?.hashCode ?? 0) ^
         ldl.hashCode ^
         vldl.hashCode ^
         cholHdlRatio.hashCode ^

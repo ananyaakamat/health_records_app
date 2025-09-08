@@ -4,7 +4,7 @@ class AppConstants {
 
   // Database
   static const String databaseName = 'health_records.db';
-  static const int databaseVersion = 3;
+  static const int databaseVersion = 4;
 
   // Table Names
   static const String profilesTable = 'profiles';

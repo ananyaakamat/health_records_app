@@ -1978,8 +1978,12 @@ class _FullScreenGraphScreenState extends ConsumerState<FullScreenGraphScreen> {
       return FlSpot(entry.key.toDouble(), entry.value.vldl.toDouble());
     }).toList();
 
-    final nonHdlSpots = sortedRecords.asMap().entries.map((entry) {
-      return FlSpot(entry.key.toDouble(), entry.value.nonHdl.toDouble());
+    final nonHdlSpots = sortedRecords
+        .asMap()
+        .entries
+        .where((entry) => entry.value.nonHdl != null)
+        .map((entry) {
+      return FlSpot(entry.key.toDouble(), entry.value.nonHdl!.toDouble());
     }).toList();
 
     final cholHdlRatioSpots = sortedRecords.asMap().entries.map((entry) {
@@ -2747,10 +2751,12 @@ class _SimpleLipidTableState extends State<_SimpleLipidTable> {
                         widget.getLipidColor(record.hdl, 'hdl',
                             isDark: widget.isDark)),
                     _buildDataColumn(
-                        record.nonHdl.toString(),
+                        record.nonHdl?.toString() ?? 'N/A',
                         90,
-                        widget.getLipidColor(record.nonHdl, 'nonhdl',
-                            isDark: widget.isDark)),
+                        record.nonHdl != null
+                            ? widget.getLipidColor(record.nonHdl!, 'nonhdl',
+                                isDark: widget.isDark)
+                            : Colors.grey),
                     _buildDataColumn(
                         record.ldl.toString(),
                         80,

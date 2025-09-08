@@ -82,7 +82,7 @@ class DatabaseHelper {
         cholesterol_total INTEGER NOT NULL,
         triglycerides INTEGER NOT NULL,
         hdl INTEGER NOT NULL,
-        non_hdl INTEGER NOT NULL,
+        non_hdl INTEGER,
         ldl INTEGER NOT NULL,
         vldl INTEGER NOT NULL,
         chol_hdl_ratio REAL NOT NULL,
@@ -123,6 +123,38 @@ class DatabaseHelper {
       await db.execute('''
         ALTER TABLE ${AppConstants.profilesTable} ADD COLUMN medication TEXT
       ''');
+    }
+    if (oldVersion < 4 && newVersion >= 4) {
+      // Make non_hdl column nullable in lipid_records table
+      // SQLite doesn't support ALTER COLUMN, so we need to recreate the table
+      await db.execute('''
+        CREATE TABLE ${AppConstants.lipidRecordsTable}_new (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          profile_id INTEGER NOT NULL,
+          cholesterol_total INTEGER NOT NULL,
+          triglycerides INTEGER NOT NULL,
+          hdl INTEGER NOT NULL,
+          non_hdl INTEGER,
+          ldl INTEGER NOT NULL,
+          vldl INTEGER NOT NULL,
+          chol_hdl_ratio REAL NOT NULL,
+          record_date TEXT NOT NULL,
+          created_at TEXT NOT NULL,
+          FOREIGN KEY (profile_id) REFERENCES ${AppConstants.profilesTable} (id) ON DELETE CASCADE,
+          UNIQUE(profile_id, record_date)
+        )
+      ''');
+
+      // Copy data from old table to new table
+      await db.execute('''
+        INSERT INTO ${AppConstants.lipidRecordsTable}_new 
+        SELECT * FROM ${AppConstants.lipidRecordsTable}
+      ''');
+
+      // Drop old table and rename new table
+      await db.execute('DROP TABLE ${AppConstants.lipidRecordsTable}');
+      await db.execute(
+          'ALTER TABLE ${AppConstants.lipidRecordsTable}_new RENAME TO ${AppConstants.lipidRecordsTable}');
     }
   }
 

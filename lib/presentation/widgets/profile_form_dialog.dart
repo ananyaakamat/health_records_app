@@ -471,6 +471,7 @@ class _ProfileFormDialogState extends ConsumerState<ProfileFormDialog> {
 
       if (isEditing) {
         // Update existing profile
+        final medication = _medicationController.text.trim();
         final updatedProfile = widget.profile!.copyWith(
           name: name,
           age: age,
@@ -478,7 +479,8 @@ class _ProfileFormDialogState extends ConsumerState<ProfileFormDialog> {
           bloodGroup: _selectedBloodGroup!,
           height: height,
           weight: weight,
-          medication: medication,
+          medication: medication.isEmpty ? null : medication,
+          clearMedication: medication.isEmpty, // Explicitly clear if empty
         );
 
         await ref

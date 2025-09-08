@@ -53,6 +53,8 @@ class Profile {
     double? height,
     double? weight,
     String? medication,
+    bool clearMedication =
+        false, // New parameter to explicitly clear medication
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -64,7 +66,7 @@ class Profile {
       bloodGroup: bloodGroup ?? this.bloodGroup,
       height: height ?? this.height,
       weight: weight ?? this.weight,
-      medication: medication ?? this.medication,
+      medication: clearMedication ? null : (medication ?? this.medication),
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );

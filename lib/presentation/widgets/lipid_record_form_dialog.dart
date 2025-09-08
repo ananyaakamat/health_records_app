@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../data/models/lipid_record.dart';
+import '../../core/utils/decimal_input_formatter.dart';
 
 class LipidRecordFormDialog extends StatefulWidget {
   final int profileId;
@@ -39,7 +40,8 @@ class _LipidRecordFormDialogState extends State<LipidRecordFormDialog> {
       _ldlController.text = record.ldl.toString();
       _triglyceridesController.text = record.triglycerides.toString();
       _vldlController.text = record.vldl.toString();
-      _nonHdlController.text = record.nonHdl.toString();
+      _nonHdlController.text =
+          record.nonHdl?.toString() ?? ''; // Handle nullable
       _cholHdlRatioController.text = record.cholHdlRatio.toString();
       _selectedDate = record.recordDate;
     }
@@ -84,15 +86,18 @@ class _LipidRecordFormDialogState extends State<LipidRecordFormDialog> {
 
   void _save() {
     if (_formKey.currentState!.validate()) {
+      final nonHdlText = _nonHdlController.text.trim();
       final record = LipidRecord(
         id: widget.record?.id,
         profileId: widget.profileId,
-        cholesterolTotal: int.parse(_cholesterolTotalController.text),
-        hdl: int.parse(_hdlController.text),
-        ldl: int.parse(_ldlController.text),
-        triglycerides: int.parse(_triglyceridesController.text),
-        vldl: int.parse(_vldlController.text),
-        nonHdl: int.parse(_nonHdlController.text),
+        cholesterolTotal: double.parse(_cholesterolTotalController.text),
+        hdl: double.parse(_hdlController.text),
+        ldl: double.parse(_ldlController.text),
+        triglycerides: double.parse(_triglyceridesController.text),
+        vldl: double.parse(_vldlController.text),
+        nonHdl: nonHdlText.isEmpty
+            ? null
+            : double.parse(nonHdlText), // Handle optional field
         cholHdlRatio: double.parse(_cholHdlRatioController.text),
         recordDate: _selectedDate,
       );
@@ -109,6 +114,7 @@ class _LipidRecordFormDialogState extends State<LipidRecordFormDialog> {
     required String validatorMessage,
     double? minValue,
     double? maxValue,
+    bool isOptional = false, // New parameter for optional fields
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -135,6 +141,10 @@ class _LipidRecordFormDialogState extends State<LipidRecordFormDialog> {
         TextFormField(
           controller: controller,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          inputFormatters: [
+            DecimalInputFormatter(
+                decimalDigits: 1), // Allow only 1 decimal place
+          ],
           decoration: InputDecoration(
             hintText: hint,
             prefixIcon: const Icon(Icons.science, color: Color(0xFF2E7D84)),
@@ -144,7 +154,9 @@ class _LipidRecordFormDialogState extends State<LipidRecordFormDialog> {
           ),
           validator: (value) {
             if (value == null || value.isEmpty) {
-              return validatorMessage;
+              return isOptional
+                  ? null
+                  : validatorMessage; // Allow empty for optional fields
             }
             final val = double.tryParse(value);
             if (val == null || val <= 0) {
@@ -267,13 +279,14 @@ class _LipidRecordFormDialogState extends State<LipidRecordFormDialog> {
                         ),
                         const SizedBox(height: 20),
                         _buildTextField(
-                          fieldName: 'Non-HDL Cholesterol (mg/dL)',
+                          fieldName: 'Non-HDL Cholesterol (mg/dL) - Optional',
                           normalRange: '<130',
-                          hint: '150',
+                          hint: '150 (Optional)',
                           controller: _nonHdlController,
                           validatorMessage: 'Please enter Non-HDL value',
                           minValue: 40,
                           maxValue: 450,
+                          isOptional: true, // Mark as optional
                         ),
                         const SizedBox(height: 20),
                         _buildTextField(
