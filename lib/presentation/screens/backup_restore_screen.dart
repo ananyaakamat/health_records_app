@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../core/services/backup_service.dart';
 import '../../core/themes/app_theme.dart';
@@ -21,7 +22,8 @@ class BackupRestoreScreen extends ConsumerStatefulWidget {
       _BackupRestoreScreenState();
 }
 
-class _BackupRestoreScreenState extends ConsumerState<BackupRestoreScreen> {
+class _BackupRestoreScreenState extends ConsumerState<BackupRestoreScreen>
+    with WidgetsBindingObserver {
   bool _isLoading = false;
   bool _autoBackupEnabled = false;
   String _autoBackupFrequency = 'daily';
@@ -29,24 +31,85 @@ class _BackupRestoreScreenState extends ConsumerState<BackupRestoreScreen> {
   List<BackupInfo> _availableBackups = [];
   bool _backupsLoaded = false;
   Timer? _refreshTimer;
+  Timer? _backupListRefreshTimer;
+  Set<String> _lastBackupFileNames = {};
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _loadSettings();
     _loadBackupInfo();
-    _loadAvailableBackups(); // Load backups immediately
+    _requestPermissionsAndLoadBackups(); // Check permissions first
 
     // Start timer to refresh backup info every minute
     _refreshTimer = Timer.periodic(const Duration(minutes: 1), (timer) {
       _loadBackupInfo();
     });
+
+    // Start timer to check for new backup files every 5 seconds
+    // This detects files copied while app is in foreground (e.g., split-screen file manager)
+    _backupListRefreshTimer =
+        Timer.periodic(const Duration(seconds: 5), (timer) {
+      _checkForNewBackups();
+    });
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _refreshTimer?.cancel();
+    _backupListRefreshTimer?.cancel();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    // Refresh backups when app comes to foreground
+    // This detects files copied when app was in background
+    // AND checks if permission was granted while in background
+    if (state == AppLifecycleState.resumed) {
+      if (kDebugMode) {
+        print('App resumed, checking for new backup files');
+      }
+      // Re-check permissions and load backups
+      _requestPermissionsAndLoadBackups();
+    }
+  }
+
+  // Lightweight check for new backups without showing loading indicator
+  Future<void> _checkForNewBackups() async {
+    try {
+      final backupService = BackupService.instance;
+      final backups = await backupService.getAvailableBackups();
+
+      // Compare actual file names, not just count
+      final currentFileNames = backups.map((b) => b.id).toSet();
+
+      // Check if there are any differences in the file sets
+      if (!_setEquals(_lastBackupFileNames, currentFileNames)) {
+        if (kDebugMode) {
+          print('Backup list changed. Old: $_lastBackupFileNames');
+          print('New: $currentFileNames');
+        }
+        _lastBackupFileNames = currentFileNames;
+        setState(() {
+          _availableBackups = backups;
+          _backupsLoaded = true;
+        });
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error checking for new backups: $e');
+      }
+    }
+  }
+
+  // Helper to compare two sets for equality
+  bool _setEquals(Set<String> set1, Set<String> set2) {
+    if (set1.length != set2.length) return false;
+    return set1.containsAll(set2);
   }
 
   Future<void> _loadSettings() async {
@@ -86,9 +149,49 @@ class _BackupRestoreScreenState extends ConsumerState<BackupRestoreScreen> {
     });
   }
 
-  Future<void> _loadAvailableBackups() async {
-    if (_backupsLoaded) return;
+  Future<void> _requestPermissionsAndLoadBackups() async {
+    if (kDebugMode) {
+      print('_requestPermissionsAndLoadBackups called');
+    }
 
+    if (!Platform.isAndroid) {
+      if (kDebugMode) {
+        print('Not Android, loading backups directly');
+      }
+      await _loadAvailableBackups();
+      return;
+    }
+
+    // Check if we already have permission
+    final manageGranted = await Permission.manageExternalStorage.isGranted;
+    final storageGranted = await Permission.storage.isGranted;
+
+    if (kDebugMode) {
+      print('MANAGE_EXTERNAL_STORAGE granted: $manageGranted');
+      print('STORAGE granted: $storageGranted');
+    }
+
+    if (manageGranted || storageGranted) {
+      if (kDebugMode) {
+        print('Storage permission already granted');
+      }
+      await _loadAvailableBackups();
+      return;
+    }
+
+    // For Android 11+, MANAGE_EXTERNAL_STORAGE cannot be requested via dialog
+    // User must manually enable it in Settings
+    if (kDebugMode) {
+      print('Storage permission not granted - showing settings prompt');
+      print('mounted: $mounted');
+    }
+
+    if (mounted) {
+      _showStoragePermissionDialog();
+    }
+  }
+
+  Future<void> _loadAvailableBackups() async {
     setState(() {
       _isLoading = true;
     });
@@ -96,6 +199,8 @@ class _BackupRestoreScreenState extends ConsumerState<BackupRestoreScreen> {
     try {
       final backupService = BackupService.instance;
       final backups = await backupService.getAvailableBackups();
+
+      _lastBackupFileNames = backups.map((b) => b.id).toSet();
 
       setState(() {
         _availableBackups = backups;
@@ -140,6 +245,8 @@ class _BackupRestoreScreenState extends ConsumerState<BackupRestoreScreen> {
       _backupsLoaded = false;
       _availableBackups.clear();
     });
+    // Small delay to allow Android file system to sync
+    await Future.delayed(const Duration(milliseconds: 300));
     await _loadAvailableBackups();
   }
 
@@ -441,6 +548,75 @@ class _BackupRestoreScreenState extends ConsumerState<BackupRestoreScreen> {
       ),
     );
     return result ?? false;
+  }
+
+  void _showStoragePermissionDialog() {
+    if (kDebugMode) {
+      print('_showStoragePermissionDialog called');
+    }
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: const Text('Storage Permission Required'),
+        content: const Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'To access backup files (including those copied from other devices), this app needs storage permission.',
+              style: TextStyle(fontSize: 14),
+            ),
+            SizedBox(height: 16),
+            Text(
+              'Steps:',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+            ),
+            SizedBox(height: 8),
+            Text(
+              '1. Tap "Open Settings" below\n'
+              '2. Find and tap "Permissions"\n'
+              '3. Enable "Files and media" or "Storage"\n'
+              '4. Choose "Allow" or "Allow all files"',
+              style: TextStyle(fontSize: 13),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              // Load with whatever permission we have
+              _loadAvailableBackups();
+            },
+            child: const Text('Skip'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              final opened = await openAppSettings();
+              if (kDebugMode) {
+                print('Settings opened: $opened');
+              }
+              // Wait a bit and try loading again
+              await Future.delayed(const Duration(seconds: 1));
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text(
+                      'After granting permission, tap the refresh button to reload backups',
+                    ),
+                    duration: Duration(seconds: 4),
+                  ),
+                );
+              }
+            },
+            child: const Text('Open Settings'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override

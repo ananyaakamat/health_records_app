@@ -4,6 +4,7 @@ import 'package:encrypt/encrypt.dart' as encrypt;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:workmanager/workmanager.dart';
 import '../database/database_helper.dart';
@@ -134,6 +135,9 @@ class BackupService {
   // Get Downloads folder path
   Future<Directory> _getDownloadsDirectory() async {
     if (Platform.isAndroid) {
+      // Ensure we have storage permission
+      await checkStoragePermission();
+
       // For Android, use the Downloads directory
       final directory = await getExternalStorageDirectory();
       if (directory != null) {
@@ -169,6 +173,31 @@ class BackupService {
     return await _createBackupFolder();
   }
 
+  // Check and request storage permissions
+  Future<bool> checkStoragePermission() async {
+    if (!Platform.isAndroid) {
+      return true; // No permission needed on other platforms
+    }
+
+    // Check Android version
+    if (await Permission.manageExternalStorage.isGranted) {
+      return true;
+    }
+
+    // For Android 11+ (API 30+), we need MANAGE_EXTERNAL_STORAGE
+    if (await Permission.manageExternalStorage.request().isGranted) {
+      return true;
+    }
+
+    // Fallback to legacy storage permissions
+    if (await Permission.storage.isGranted) {
+      return true;
+    }
+
+    final status = await Permission.storage.request();
+    return status.isGranted;
+  }
+
   // Create backup
   Future<BackupResult> createBackup({bool isAutoBackup = false}) async {
     try {
@@ -202,7 +231,7 @@ class BackupService {
       final amPm = timestamp.hour >= 12 ? 'PM' : 'AM';
       final formattedDate =
           "${timestamp.day}${_getMonthName(timestamp.month)}${timestamp.year.toString().substring(2)}_${hour12.toString().padLeft(2, '0')}${timestamp.minute.toString().padLeft(2, '0')}$amPm";
-      final backupFileName = 'backup_$formattedDate.db.enc';
+      final backupFileName = 'medical_records$formattedDate.db.enc';
 
       // Get backup folder
       final backupDir = await _createBackupFolder();
@@ -340,23 +369,88 @@ class BackupService {
   // Get available backups
   Future<List<BackupInfo>> getAvailableBackups() async {
     try {
+      // Check storage permission before accessing files
+      final hasPermission = await checkStoragePermission();
+      if (!hasPermission) {
+        if (kDebugMode) {
+          print(
+              'BackupService: Storage permission denied, returning empty list');
+        }
+        return [];
+      }
+
       final backupDir = await _createBackupFolder();
-      final files = await backupDir.list().toList();
+
+      // Create fresh directory instance to avoid caching issues
+      final freshDir = Directory(backupDir.path);
+
+      if (kDebugMode) {
+        print('BackupService: Scanning directory: ${freshDir.path}');
+      }
+
+      final files =
+          await freshDir.list(recursive: false, followLinks: false).toList();
+
+      if (kDebugMode) {
+        print(
+            'BackupService: Found ${files.length} total items in backup directory');
+      }
 
       final backups = <BackupInfo>[];
 
-      for (final file in files) {
-        if (file is File && file.path.endsWith('.db.enc')) {
-          final fileName = file.path.split('/').last;
-          final stat = await file.stat();
+      for (final entity in files) {
+        if (entity is File) {
+          // Create fresh file instance to avoid caching
+          final freshFile = File(entity.path);
 
-          backups.add(BackupInfo(
-            id: fileName,
-            displayName: fileName.replaceAll('.db.enc', ''),
-            createdTime: stat.modified,
-            size: stat.size,
-          ));
+          // Check if file exists and is readable
+          if (!await freshFile.exists()) {
+            if (kDebugMode) {
+              print('BackupService: File does not exist: ${entity.path}');
+            }
+            continue;
+          }
+
+          final fileName = entity.path.split('/').last;
+
+          // Case-insensitive filter: accept files containing 'medical_record' OR 'backup_'
+          // This handles:
+          // - App-created files: medical_records30Dec25_1218PM.db.enc or backup_30Dec25_1218PM.db.enc
+          // - Shared files with extension: Health Records Backup - medical_records30Dec25_1218PM.db.enc
+          // - Shared files without extension: Health Records Backup - backup_29Dec25_0206PM
+          final lowerFileName = fileName.toLowerCase();
+          if (lowerFileName.contains('medical_record') ||
+              lowerFileName.contains('backup_')) {
+            if (kDebugMode) {
+              print('BackupService: Valid backup file found: $fileName');
+            }
+
+            try {
+              final stat = await freshFile.stat();
+
+              backups.add(BackupInfo(
+                id: fileName,
+                displayName: fileName.replaceAll('.db.enc', ''),
+                createdTime: stat.modified,
+                size: stat.size,
+              ));
+            } catch (e) {
+              if (kDebugMode) {
+                print(
+                    'BackupService: Error reading file stats for $fileName: $e');
+              }
+            }
+          } else {
+            if (kDebugMode) {
+              print(
+                  'BackupService: Skipping file (does not match pattern): $fileName');
+            }
+          }
         }
+      }
+
+      if (kDebugMode) {
+        print('BackupService: Total valid backups detected: ${backups.length}');
       }
 
       // Sort by creation time (newest first)
