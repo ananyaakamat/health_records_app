@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../data/models/sugar_record.dart';
+import '../../core/utils/decimal_input_formatter.dart';
 
 class SugarRecordFormDialog extends StatefulWidget {
   final int profileId;
@@ -77,9 +78,15 @@ class _SugarRecordFormDialogState extends State<SugarRecordFormDialog> {
       final record = SugarRecord(
         id: widget.record?.id,
         profileId: widget.profileId,
-        fbs: _fbsController.text.isEmpty ? null : double.parse(_fbsController.text),
-        ppbs: _ppbsController.text.isEmpty ? null : double.parse(_ppbsController.text),
-        rbs: _rbsController.text.isEmpty ? null : double.parse(_rbsController.text),
+        fbs: _fbsController.text.isEmpty
+            ? null
+            : double.parse(_fbsController.text),
+        ppbs: _ppbsController.text.isEmpty
+            ? null
+            : double.parse(_ppbsController.text),
+        rbs: _rbsController.text.isEmpty
+            ? null
+            : double.parse(_rbsController.text),
         hba1c: double.parse(_hba1cController.text),
         recordDate: _selectedDate,
       );
@@ -88,143 +95,237 @@ class _SugarRecordFormDialogState extends State<SugarRecordFormDialog> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text(
-        widget.record == null ? 'Add Sugar Record' : 'Edit Sugar Record',
-        style: const TextStyle(
-            color: Color(0xFF2E7D84), fontWeight: FontWeight.bold),
-      ),
-      content: SizedBox(
-        width: MediaQuery.of(context).size.width * 0.9,
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextFormField(
-                controller: _fbsController,
-                keyboardType:
-                    const TextInputType.numberWithOptions(decimal: true),
-                decoration: const InputDecoration(
-                  labelText: 'FBS (mg/dL) - Normal: 80-100',
-                  hintText: 'Enter Fasting Blood Sugar',
-                  prefixIcon: Icon(Icons.bloodtype, color: Color(0xFF2E7D84)),
-                ),
-                validator: (value) {
-                  if (value != null && value.isNotEmpty) {
-                    final fbs = double.tryParse(value);
-                    if (fbs == null || fbs <= 0) {
-                      return 'Please enter a valid FBS value';
-                    }
-                    if (fbs > 500) {
-                      return 'FBS value seems too high';
-                    }
-                  }
-                  return null;
-                },
+  Widget _buildTextField({
+    required String fieldName,
+    required String normalRange,
+    required String hint,
+    required TextEditingController controller,
+    required String validatorMessage,
+    double? minValue,
+    double? maxValue,
+    bool isOptional = false,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Field name on one line
+        Text(
+          fieldName,
+          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF2E7D84),
               ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _ppbsController,
-                keyboardType:
-                    const TextInputType.numberWithOptions(decimal: true),
-                decoration: const InputDecoration(
-                  labelText: 'PPBS (mg/dL) - Normal: 120-140',
-                  hintText: 'Enter Post-Prandial Blood Sugar',
-                  prefixIcon: Icon(Icons.bloodtype, color: Color(0xFF2E7D84)),
-                ),
-                validator: (value) {
-                  if (value != null && value.isNotEmpty) {
-                    final ppbs = double.tryParse(value);
-                    if (ppbs == null || ppbs <= 0) {
-                      return 'Please enter a valid PPBS value';
-                    }
-                    if (ppbs > 500) {
-                      return 'PPBS value seems too high';
-                    }
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _rbsController,
-                keyboardType:
-                    const TextInputType.numberWithOptions(decimal: true),
-                decoration: const InputDecoration(
-                  labelText: 'RBS (mg/dL) - Normal: <140',
-                  hintText: 'Enter Random Blood Sugar',
-                  prefixIcon: Icon(Icons.bloodtype, color: Color(0xFF2E7D84)),
-                ),
-                validator: (value) {
-                  if (value != null && value.isNotEmpty) {
-                    final rbs = double.tryParse(value);
-                    if (rbs == null || rbs <= 0) {
-                      return 'Please enter a valid RBS value';
-                    }
-                    if (rbs > 500) {
-                      return 'RBS value seems too high';
-                    }
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _hba1cController,
-                keyboardType:
-                    const TextInputType.numberWithOptions(decimal: true),
-                decoration: const InputDecoration(
-                  labelText: 'HbA1c (%) - Normal: 4.0-5.6%',
-                  hintText: 'Enter HbA1c percentage',
-                  prefixIcon: Icon(Icons.bloodtype, color: Color(0xFF2E7D84)),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter HbA1c value';
-                  }
-                  final hba1c = double.tryParse(value);
-                  if (hba1c == null || hba1c <= 0) {
-                    return 'Please enter a valid HbA1c value';
-                  }
-                  if (hba1c > 20) {
-                    return 'HbA1c value seems too high';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              InkWell(
-                onTap: _selectDate,
-                child: InputDecorator(
-                  decoration: const InputDecoration(
-                    labelText: 'Date Recorded',
-                    prefixIcon:
-                        Icon(Icons.calendar_today, color: Color(0xFF2E7D84)),
-                  ),
-                  child: Text(DateFormat('MMM dd, yyyy').format(_selectedDate)),
-                ),
-              ),
-            ],
-          ),
         ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
+        const SizedBox(height: 4),
+        // Normal range on second line
+        Text(
+          'Normal: $normalRange',
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Colors.grey[600],
+                fontStyle: FontStyle.italic,
+              ),
         ),
-        ElevatedButton(
-          onPressed: _save,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF2E7D84),
-            foregroundColor: Colors.white,
+        const SizedBox(height: 8),
+        // Input field on third line
+        TextFormField(
+          controller: controller,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          inputFormatters: [
+            DecimalInputFormatter(decimalDigits: 1),
+          ],
+          decoration: InputDecoration(
+            hintText: hint,
+            prefixIcon: const Icon(Icons.bloodtype, color: Color(0xFF2E7D84)),
+            isDense: true,
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
           ),
-          child: Text(widget.record == null ? 'Add' : 'Update'),
+          validator: (value) {
+            if (value == null || value.isEmpty) {
+              return isOptional ? null : validatorMessage;
+            }
+            final val = double.tryParse(value);
+            if (val == null || val <= 0) {
+              return 'Please enter a valid value';
+            }
+            if (minValue != null && val < minValue) {
+              return 'Value should be at least $minValue';
+            }
+            if (maxValue != null && val > maxValue) {
+              return 'Value should not exceed $maxValue';
+            }
+            return null;
+          },
         ),
       ],
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Container(
+        width: MediaQuery.of(context).size.width * 0.95,
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.85,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Title bar
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: const BoxDecoration(
+                color: Color(0xFF2E7D84),
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(16),
+                  topRight: Radius.circular(16),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      widget.record == null
+                          ? 'Add Sugar Record'
+                          : 'Edit Sugar Record',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close, color: Colors.white),
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                ],
+              ),
+            ),
+            // Form content
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Form(
+                  key: _formKey,
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _buildTextField(
+                          fieldName: 'FBS (mg/dL)',
+                          normalRange: '80-100',
+                          hint: '90',
+                          controller: _fbsController,
+                          validatorMessage: 'Please enter FBS value',
+                          minValue: 20,
+                          maxValue: 500,
+                          isOptional: true,
+                        ),
+                        const SizedBox(height: 20),
+                        _buildTextField(
+                          fieldName: 'PPBS (mg/dL)',
+                          normalRange: '120-140',
+                          hint: '130',
+                          controller: _ppbsController,
+                          validatorMessage: 'Please enter PPBS value',
+                          minValue: 40,
+                          maxValue: 500,
+                          isOptional: true,
+                        ),
+                        const SizedBox(height: 20),
+                        _buildTextField(
+                          fieldName: 'RBS (mg/dL)',
+                          normalRange: '<140',
+                          hint: '120',
+                          controller: _rbsController,
+                          validatorMessage: 'Please enter RBS value',
+                          minValue: 40,
+                          maxValue: 500,
+                          isOptional: true,
+                        ),
+                        const SizedBox(height: 20),
+                        _buildTextField(
+                          fieldName: 'HbA1c (%)',
+                          normalRange: '4.0-5.6',
+                          hint: '5.0',
+                          controller: _hba1cController,
+                          validatorMessage: 'Please enter HbA1c value',
+                          minValue: 3,
+                          maxValue: 20,
+                          isOptional: false,
+                        ),
+                        const SizedBox(height: 20),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Date Recorded',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleSmall
+                                  ?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                    color: const Color(0xFF2E7D84),
+                                  ),
+                            ),
+                            const SizedBox(height: 8),
+                            InkWell(
+                              onTap: _selectDate,
+                              child: InputDecorator(
+                                decoration: const InputDecoration(
+                                  prefixIcon: Icon(Icons.calendar_today,
+                                      color: Color(0xFF2E7D84)),
+                                  isDense: true,
+                                  contentPadding: EdgeInsets.symmetric(
+                                      horizontal: 12, vertical: 12),
+                                ),
+                                child: Text(DateFormat('MMM dd, yyyy')
+                                    .format(_selectedDate)),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            // Action buttons
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surface,
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(16),
+                  bottomRight: Radius.circular(16),
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('Cancel'),
+                  ),
+                  const SizedBox(width: 12),
+                  ElevatedButton(
+                    onPressed: _save,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF2E7D84),
+                      foregroundColor: Colors.white,
+                    ),
+                    child: Text(widget.record == null ? 'Add' : 'Update'),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
