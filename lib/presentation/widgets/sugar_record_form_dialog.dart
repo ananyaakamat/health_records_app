@@ -78,6 +78,19 @@ class _SugarRecordFormDialogState extends State<SugarRecordFormDialog> {
     }
   }
 
+  String? _validateSugarValue(String? value, String fieldName) {
+    if (value != null && value.isNotEmpty) {
+      final sugar = int.tryParse(value);
+      if (sugar == null || sugar <= 0) {
+        return 'Please enter a valid $fieldName value';
+      }
+      if (sugar > 500) {
+        return '$fieldName value seems too high';
+      }
+    }
+    return null;
+  }
+
   void _save() {
     if (_formKey.currentState!.validate()) {
       final record = SugarRecord(
@@ -123,18 +136,7 @@ class _SugarRecordFormDialogState extends State<SugarRecordFormDialog> {
                   hintText: 'Enter FBS value',
                   prefixIcon: Icon(Icons.bloodtype, color: Color(0xFF2E7D84)),
                 ),
-                validator: (value) {
-                  if (value != null && value.isNotEmpty) {
-                    final fbs = int.tryParse(value);
-                    if (fbs == null || fbs <= 0) {
-                      return 'Please enter a valid FBS value';
-                    }
-                    if (fbs > 500) {
-                      return 'FBS value seems too high';
-                    }
-                  }
-                  return null;
-                },
+                validator: (value) => _validateSugarValue(value, 'FBS'),
               ),
               const SizedBox(height: 16),
               TextFormField(
@@ -145,18 +147,7 @@ class _SugarRecordFormDialogState extends State<SugarRecordFormDialog> {
                   hintText: 'Enter PPBS value',
                   prefixIcon: Icon(Icons.bloodtype, color: Color(0xFF2E7D84)),
                 ),
-                validator: (value) {
-                  if (value != null && value.isNotEmpty) {
-                    final ppbs = int.tryParse(value);
-                    if (ppbs == null || ppbs <= 0) {
-                      return 'Please enter a valid PPBS value';
-                    }
-                    if (ppbs > 500) {
-                      return 'PPBS value seems too high';
-                    }
-                  }
-                  return null;
-                },
+                validator: (value) => _validateSugarValue(value, 'PPBS'),
               ),
               const SizedBox(height: 16),
               TextFormField(
@@ -167,18 +158,7 @@ class _SugarRecordFormDialogState extends State<SugarRecordFormDialog> {
                   hintText: 'Enter RBS value',
                   prefixIcon: Icon(Icons.bloodtype, color: Color(0xFF2E7D84)),
                 ),
-                validator: (value) {
-                  if (value != null && value.isNotEmpty) {
-                    final rbs = int.tryParse(value);
-                    if (rbs == null || rbs <= 0) {
-                      return 'Please enter a valid RBS value';
-                    }
-                    if (rbs > 500) {
-                      return 'RBS value seems too high';
-                    }
-                  }
-                  return null;
-                },
+                validator: (value) => _validateSugarValue(value, 'RBS'),
               ),
               const SizedBox(height: 16),
               TextFormField(
