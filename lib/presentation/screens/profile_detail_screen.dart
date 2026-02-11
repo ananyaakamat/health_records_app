@@ -602,23 +602,23 @@ class ProfileDetailScreen extends ConsumerWidget {
   // Helper method to get color based on sugar levels
   Color _getSugarColor(num value, String type, {bool isDark = false}) {
     switch (type) {
-      case 'fbs': // Fasting Blood Sugar (80-100)
+      case 'fbs': // Fasting Blood Sugar (80-100 normal)
         if (value >= 80 && value <= 100) {
           return isDark ? Colors.green.shade300 : Colors.green.shade700;
-        } else if (value < 80 || (value > 100 && value <= 125)) {
+        } else if ((value >= 70 && value < 80) || (value > 100 && value <= 125)) {
           return isDark ? Colors.orange.shade300 : Colors.orange.shade700;
         } else {
           return isDark ? Colors.red.shade300 : Colors.red.shade700;
         }
-      case 'ppbs': // Post Prandial Blood Sugar (120-140)
+      case 'ppbs': // Post Prandial Blood Sugar (120-140 normal)
         if (value >= 120 && value <= 140) {
           return isDark ? Colors.green.shade300 : Colors.green.shade700;
-        } else if (value < 120 || (value > 140 && value <= 180)) {
+        } else if ((value >= 100 && value < 120) || (value > 140 && value <= 180)) {
           return isDark ? Colors.orange.shade300 : Colors.orange.shade700;
         } else {
           return isDark ? Colors.red.shade300 : Colors.red.shade700;
         }
-      case 'rbs': // Random Blood Sugar (<140)
+      case 'rbs': // Random Blood Sugar (<140 normal)
         if (value < 140) {
           return isDark ? Colors.green.shade300 : Colors.green.shade700;
         } else if (value >= 140 && value <= 180) {
