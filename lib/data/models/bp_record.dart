@@ -5,6 +5,7 @@ class BPRecord {
   final int profileId;
   final int systolic;
   final int diastolic;
+  final int? bpm; // Beats per minute
   final DateTime recordDate;
   final DateTime createdAt;
 
@@ -13,6 +14,7 @@ class BPRecord {
     required this.profileId,
     required this.systolic,
     required this.diastolic,
+    this.bpm,
     required this.recordDate,
     DateTime? createdAt,
   }) : createdAt = createdAt ?? DateTime.now();
@@ -22,6 +24,7 @@ class BPRecord {
     int? profileId,
     int? systolic,
     int? diastolic,
+    int? bpm,
     DateTime? recordDate,
     DateTime? createdAt,
   }) {
@@ -30,6 +33,7 @@ class BPRecord {
       profileId: profileId ?? this.profileId,
       systolic: systolic ?? this.systolic,
       diastolic: diastolic ?? this.diastolic,
+      bpm: bpm ?? this.bpm,
       recordDate: recordDate ?? this.recordDate,
       createdAt: createdAt ?? this.createdAt,
     );
@@ -41,6 +45,7 @@ class BPRecord {
       'profile_id': profileId,
       'systolic': systolic,
       'diastolic': diastolic,
+      'bpm': bpm,
       'record_date': DateFormat('yyyy-MM-dd').format(recordDate),
       'created_at': DateFormat('yyyy-MM-dd HH:mm:ss').format(createdAt),
     };
@@ -52,6 +57,7 @@ class BPRecord {
       profileId: map['profile_id']?.toInt() ?? 0,
       systolic: map['systolic']?.toInt() ?? 0,
       diastolic: map['diastolic']?.toInt() ?? 0,
+      bpm: map['bpm']?.toInt(),
       recordDate: DateTime.parse(map['record_date']),
       createdAt: DateTime.parse(map['created_at']),
     );
@@ -88,7 +94,7 @@ class BPRecord {
 
   @override
   String toString() {
-    return 'BPRecord{id: $id, profileId: $profileId, systolic: $systolic, diastolic: $diastolic, recordDate: $recordDate}';
+    return 'BPRecord{id: $id, profileId: $profileId, systolic: $systolic, diastolic: $diastolic, bpm: $bpm, recordDate: $recordDate}';
   }
 
   @override
@@ -99,6 +105,7 @@ class BPRecord {
         other.profileId == profileId &&
         other.systolic == systolic &&
         other.diastolic == diastolic &&
+        other.bpm == bpm &&
         other.recordDate == recordDate;
   }
 
@@ -108,6 +115,7 @@ class BPRecord {
         profileId.hashCode ^
         systolic.hashCode ^
         diastolic.hashCode ^
+        bpm.hashCode ^
         recordDate.hashCode;
   }
 }

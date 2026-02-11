@@ -671,221 +671,12 @@ class ProfileDetailScreen extends ConsumerWidget {
           ),
         ],
       ),
-      child: Column(
-        children: [
-          // Fixed Header
-          Container(
-            decoration: BoxDecoration(
-              color: isDark
-                  ? AppTheme.primaryColor.withOpacity(0.2)
-                  : AppTheme.primaryColor.withOpacity(0.1),
-              borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(12)),
-              border: Border(
-                bottom: BorderSide(
-                  color: isDark ? Colors.grey.shade600 : Colors.grey.shade300,
-                ),
-              ),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              child: Row(
-                children: [
-                  Expanded(
-                    flex: 2,
-                    child: Text(
-                      'Date',
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color:
-                                isDark ? Colors.white : AppTheme.primaryColor,
-                          ),
-                    ),
-                  ),
-                  Expanded(
-                    flex: 2,
-                    child: Text(
-                      'SBP\n(mmHg)\n(<120)',
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color:
-                                isDark ? Colors.white : AppTheme.primaryColor,
-                            fontSize: 12,
-                          ),
-                    ),
-                  ),
-                  Expanded(
-                    flex: 2,
-                    child: Text(
-                      'DBP\n(mmHg)\n(<80)',
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color:
-                                isDark ? Colors.white : AppTheme.primaryColor,
-                            fontSize: 12,
-                          ),
-                    ),
-                  ),
-                  const SizedBox(width: 40), // Space for menu button
-                ],
-              ),
-            ),
-          ),
-          // Scrollable Content
-          Expanded(
-            child: sortedRecords.isEmpty
-                ? Padding(
-                    padding: const EdgeInsets.all(32),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.table_chart,
-                          size: 48,
-                          color: isDark
-                              ? Colors.grey.shade400
-                              : Colors.grey.shade400,
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          'No BP records yet—add one above to get started.',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: isDark
-                                ? Colors.grey.shade300
-                                : Colors.grey.shade600,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  )
-                : ListView.builder(
-                    // Performance optimization for large lists
-                    physics: const BouncingScrollPhysics(), // Smooth scrolling
-                    cacheExtent: 200, // Cache items for better performance
-                    itemCount: sortedRecords.length,
-                    itemBuilder: (context, index) {
-                      final record = sortedRecords[index];
-                      final isLastItem = index == sortedRecords.length - 1;
-
-                      return Container(
-                        decoration: BoxDecoration(
-                          border: Border(
-                            bottom: isLastItem
-                                ? BorderSide.none
-                                : BorderSide(
-                                    color: isDark
-                                        ? Colors.grey.shade700
-                                        : Colors.grey.shade200,
-                                  ),
-                          ),
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 7),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                flex: 2,
-                                child: Text(
-                                  DateFormat('dd-MMM-yy')
-                                      .format(record.recordDate),
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w500,
-                                    color: isDark
-                                        ? Colors.white.withOpacity(0.87)
-                                        : Colors.black.withOpacity(0.87),
-                                  ),
-                                ),
-                              ),
-                              Expanded(
-                                flex: 2,
-                                child: Text(
-                                  record.systolic.toString(),
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w500,
-                                    color: _getBPColor(
-                                        record.systolic, 'systolic',
-                                        isDark: isDark),
-                                  ),
-                                ),
-                              ),
-                              Expanded(
-                                flex: 2,
-                                child: Text(
-                                  record.diastolic.toString(),
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w500,
-                                    color: _getBPColor(
-                                        record.diastolic, 'diastolic',
-                                        isDark: isDark),
-                                  ),
-                                ),
-                              ),
-                              // Three-dots menu
-                              SizedBox(
-                                width: 40,
-                                child: PopupMenuButton<String>(
-                                  icon: Icon(
-                                    Icons.more_vert,
-                                    color: isDark
-                                        ? Colors.grey.shade400
-                                        : Colors.grey.shade600,
-                                    size: 20,
-                                  ),
-                                  onSelected: (value) {
-                                    if (value == 'edit') {
-                                      _showBPRecordForm(context, ref,
-                                          record: record);
-                                    } else if (value == 'delete') {
-                                      _deleteBPRecord(context, ref, record);
-                                    }
-                                  },
-                                  itemBuilder: (context) => [
-                                    const PopupMenuItem(
-                                      value: 'edit',
-                                      child: Row(
-                                        children: [
-                                          Icon(Icons.edit, size: 20),
-                                          SizedBox(width: 8),
-                                          Text('Edit'),
-                                        ],
-                                      ),
-                                    ),
-                                    const PopupMenuItem(
-                                      value: 'delete',
-                                      child: Row(
-                                        children: [
-                                          Icon(Icons.delete,
-                                              size: 20, color: Colors.red),
-                                          SizedBox(width: 8),
-                                          Text('Delete',
-                                              style:
-                                                  TextStyle(color: Colors.red)),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-          ),
-        ],
+      child: _SimpleBPTable(
+        sortedRecords: sortedRecords,
+        isDark: isDark,
+        getBPColor: _getBPColor,
+        onEdit: (record) => _showBPRecordForm(context, ref, record: record),
+        onDelete: (record) => _deleteBPRecord(context, ref, record),
       ),
     );
   }
@@ -900,8 +691,7 @@ class ProfileDetailScreen extends ConsumerWidget {
       } else {
         return isDark ? Colors.red.shade300 : Colors.red.shade700;
       }
-    } else {
-      // diastolic
+    } else if (type == 'diastolic') {
       if (value < 80) {
         return isDark ? Colors.green.shade300 : Colors.green.shade700;
       } else if (value < 90) {
@@ -909,7 +699,18 @@ class ProfileDetailScreen extends ConsumerWidget {
       } else {
         return isDark ? Colors.red.shade300 : Colors.red.shade700;
       }
+    } else if (type == 'bpm') {
+      // BPM: 60-80 is normal (green), otherwise yellow/orange
+      if (value >= 60 && value <= 80) {
+        return isDark ? Colors.green.shade300 : Colors.green.shade700;
+      } else {
+        return isDark ? Colors.orange.shade300 : Colors.orange.shade700;
+      }
     }
+    // Default color for unknown type
+    return isDark
+        ? Colors.white.withOpacity(0.87)
+        : Colors.black.withOpacity(0.87);
   }
 
   Widget _buildLipidTable(
@@ -2991,6 +2792,334 @@ class _SimpleLipidTableState extends State<_SimpleLipidTable> {
   }
 
   Widget _buildActionsColumn(LipidRecord record) {
+    return SizedBox(
+      width: 40,
+      child: PopupMenuButton<String>(
+        icon: Icon(
+          Icons.more_vert,
+          color: widget.isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+          size: 20,
+        ),
+        onSelected: (value) {
+          if (value == 'edit') {
+            widget.onEdit(record);
+          } else if (value == 'delete') {
+            widget.onDelete(record);
+          }
+        },
+        itemBuilder: (context) => [
+          const PopupMenuItem(
+            value: 'edit',
+            child: Row(
+              children: [
+                Icon(Icons.edit, size: 20),
+                SizedBox(width: 8),
+                Text('Edit'),
+              ],
+            ),
+          ),
+          const PopupMenuItem(
+            value: 'delete',
+            child: Row(
+              children: [
+                Icon(Icons.delete, size: 20, color: Colors.red),
+                SizedBox(width: 8),
+                Text('Delete', style: TextStyle(color: Colors.red)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// _SimpleBPTable - Stateful widget for BP table with frozen Date column
+class _SimpleBPTable extends StatefulWidget {
+  final List<BPRecord> sortedRecords;
+  final bool isDark;
+  final Color Function(int, String, {bool isDark}) getBPColor;
+  final void Function(BPRecord) onEdit;
+  final void Function(BPRecord) onDelete;
+
+  const _SimpleBPTable({
+    required this.sortedRecords,
+    required this.isDark,
+    required this.getBPColor,
+    required this.onEdit,
+    required this.onDelete,
+  });
+
+  @override
+  State<_SimpleBPTable> createState() => _SimpleBPTableState();
+}
+
+class _SimpleBPTableState extends State<_SimpleBPTable> {
+  late ScrollController _headerScrollController;
+  late List<ScrollController> _rowScrollControllers;
+  bool _syncing = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _headerScrollController = ScrollController();
+    _rowScrollControllers = List.generate(
+      widget.sortedRecords.length,
+      (index) => ScrollController(),
+    );
+
+    // Add listener to header scroll controller
+    _headerScrollController.addListener(_onHeaderScroll);
+
+    // Add listeners to all row scroll controllers
+    for (int i = 0; i < _rowScrollControllers.length; i++) {
+      final controller = _rowScrollControllers[i];
+      controller.addListener(() => _onRowScroll(i));
+    }
+  }
+
+  @override
+  void dispose() {
+    _headerScrollController.dispose();
+    for (final controller in _rowScrollControllers) {
+      controller.dispose();
+    }
+    super.dispose();
+  }
+
+  void _onHeaderScroll() {
+    if (_syncing) return;
+    _syncing = true;
+    final offset = _headerScrollController.offset;
+    for (final controller in _rowScrollControllers) {
+      if (controller.hasClients && controller.offset != offset) {
+        controller.jumpTo(offset);
+      }
+    }
+    _syncing = false;
+  }
+
+  void _onRowScroll(int index) {
+    if (_syncing) return;
+    _syncing = true;
+    final offset = _rowScrollControllers[index].offset;
+
+    // Sync header
+    if (_headerScrollController.hasClients &&
+        _headerScrollController.offset != offset) {
+      _headerScrollController.jumpTo(offset);
+    }
+
+    // Sync all other rows
+    for (int i = 0; i < _rowScrollControllers.length; i++) {
+      if (i != index) {
+        final controller = _rowScrollControllers[i];
+        if (controller.hasClients && controller.offset != offset) {
+          controller.jumpTo(offset);
+        }
+      }
+    }
+    _syncing = false;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        // Fixed Header with Frozen Date Column
+        Container(
+          decoration: BoxDecoration(
+            color: widget.isDark
+                ? AppTheme.primaryColor.withOpacity(0.2)
+                : AppTheme.primaryColor.withOpacity(0.1),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+            border: Border(
+              bottom: BorderSide(
+                color:
+                    widget.isDark ? Colors.grey.shade600 : Colors.grey.shade300,
+              ),
+            ),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            child: Row(
+              children: [
+                // Frozen Date column header
+                SizedBox(
+                  width: 80,
+                  child: Text(
+                    'Date',
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: widget.isDark
+                              ? Colors.white
+                              : AppTheme.primaryColor,
+                          fontSize: 12,
+                        ),
+                  ),
+                ),
+                // Scrollable headers section
+                Expanded(
+                  child: SingleChildScrollView(
+                    controller: _headerScrollController,
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        _buildHeaderColumn('SBP\n(mmHg)\n(<120)', 80),
+                        _buildHeaderColumn('DBP\n(mmHg)\n(<80)', 80),
+                        _buildHeaderColumn('BPM\n(60-80)', 80),
+                        const SizedBox(width: 40), // Actions column
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        // Scrollable Content
+        Expanded(
+          child: widget.sortedRecords.isEmpty
+              ? _buildEmptyState()
+              : ListView.builder(
+                  physics: const BouncingScrollPhysics(),
+                  itemCount: widget.sortedRecords.length,
+                  itemBuilder: (context, index) => _buildDataRow(index),
+                ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildHeaderColumn(String title, double width) {
+    return SizedBox(
+      width: width,
+      child: Text(
+        title,
+        textAlign: TextAlign.center,
+        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: widget.isDark ? Colors.white : AppTheme.primaryColor,
+              fontSize: 12,
+            ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Padding(
+      padding: const EdgeInsets.all(32),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.table_chart,
+            size: 48,
+            color: widget.isDark ? Colors.grey.shade400 : Colors.grey.shade400,
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'No BP records yet—add one above to get started.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 16,
+              color:
+                  widget.isDark ? Colors.grey.shade300 : Colors.grey.shade600,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDataRow(int index) {
+    final record = widget.sortedRecords[index];
+    final isLastItem = index == widget.sortedRecords.length - 1;
+
+    return Container(
+      decoration: BoxDecoration(
+        border: Border(
+          bottom: isLastItem
+              ? BorderSide.none
+              : BorderSide(
+                  color: widget.isDark
+                      ? Colors.grey.shade700
+                      : Colors.grey.shade200,
+                ),
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
+        child: Row(
+          children: [
+            // Frozen Date column
+            SizedBox(
+              width: 80,
+              child: Text(
+                DateFormat('dd-MMM-yy').format(record.recordDate),
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: widget.isDark
+                      ? Colors.white.withOpacity(0.87)
+                      : Colors.black.withOpacity(0.87),
+                ),
+              ),
+            ),
+            // Scrollable data columns
+            Expanded(
+              child: SingleChildScrollView(
+                controller: _rowScrollControllers[index],
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    _buildDataColumn(
+                        record.systolic.toString(),
+                        80,
+                        widget.getBPColor(record.systolic, 'systolic',
+                            isDark: widget.isDark)),
+                    _buildDataColumn(
+                        record.diastolic.toString(),
+                        80,
+                        widget.getBPColor(record.diastolic, 'diastolic',
+                            isDark: widget.isDark)),
+                    _buildDataColumn(
+                        record.bpm?.toString() ?? 'N/A',
+                        80,
+                        record.bpm != null
+                            ? widget.getBPColor(record.bpm!, 'bpm',
+                                isDark: widget.isDark)
+                            : Colors.grey),
+                    _buildActionsColumn(record),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDataColumn(String text, double width, Color color) {
+    return SizedBox(
+      width: width,
+      child: Text(
+        text,
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w500,
+          color: color,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActionsColumn(BPRecord record) {
     return SizedBox(
       width: 40,
       child: PopupMenuButton<String>(

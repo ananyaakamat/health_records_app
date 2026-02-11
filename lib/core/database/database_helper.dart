@@ -70,10 +70,11 @@ class DatabaseHelper {
         profile_id INTEGER NOT NULL,
         systolic INTEGER NOT NULL,
         diastolic INTEGER NOT NULL,
+        bpm INTEGER,
         record_date TEXT NOT NULL,
         created_at TEXT NOT NULL,
         FOREIGN KEY (profile_id) REFERENCES ${AppConstants.profilesTable} (id) ON DELETE CASCADE,
-        UNIQUE(profile_id, record_date)
+        UNIQUE(profile_id,record_date)
       )
     ''');
 
@@ -169,6 +170,12 @@ class DatabaseHelper {
       ''');
       await db.execute('''
         ALTER TABLE ${AppConstants.sugarRecordsTable} ADD COLUMN rbs REAL
+      ''');
+    }
+    if (oldVersion < 6 && newVersion >= 6) {
+      // Add BPM column to bp_records table
+      await db.execute('''
+        ALTER TABLE ${AppConstants.bpRecordsTable} ADD COLUMN bpm INTEGER
       ''');
     }
   }
