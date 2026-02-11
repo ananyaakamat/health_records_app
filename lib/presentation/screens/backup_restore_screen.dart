@@ -29,7 +29,6 @@ class _BackupRestoreScreenState extends ConsumerState<BackupRestoreScreen>
   String _autoBackupFrequency = 'daily';
   String? _lastBackupInfo;
   List<BackupInfo> _availableBackups = [];
-  bool _backupsLoaded = false;
   Timer? _refreshTimer;
   Timer? _backupListRefreshTimer;
   Set<String> _lastBackupFileNames = {};
@@ -96,7 +95,6 @@ class _BackupRestoreScreenState extends ConsumerState<BackupRestoreScreen>
         _lastBackupFileNames = currentFileNames;
         setState(() {
           _availableBackups = backups;
-          _backupsLoaded = true;
         });
       }
     } catch (e) {
@@ -204,7 +202,6 @@ class _BackupRestoreScreenState extends ConsumerState<BackupRestoreScreen>
 
       setState(() {
         _availableBackups = backups;
-        _backupsLoaded = true;
       });
     } catch (e) {
       _showErrorDialog('Failed to load backups: $e');
@@ -242,7 +239,6 @@ class _BackupRestoreScreenState extends ConsumerState<BackupRestoreScreen>
 
   Future<void> _refreshBackups() async {
     setState(() {
-      _backupsLoaded = false;
       _availableBackups.clear();
     });
     // Small delay to allow Android file system to sync
