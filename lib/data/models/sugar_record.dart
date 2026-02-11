@@ -3,6 +3,9 @@ import 'package:intl/intl.dart';
 class SugarRecord {
   final int? id;
   final int profileId;
+  final int? fbs; // Fasting Blood Sugar
+  final int? ppbs; // Post Prandial Blood Sugar
+  final int? rbs; // Random Blood Sugar
   final double hba1c;
   final DateTime recordDate;
   final DateTime createdAt;
@@ -10,6 +13,9 @@ class SugarRecord {
   SugarRecord({
     this.id,
     required this.profileId,
+    this.fbs,
+    this.ppbs,
+    this.rbs,
     required this.hba1c,
     required this.recordDate,
     DateTime? createdAt,
@@ -18,6 +24,9 @@ class SugarRecord {
   SugarRecord copyWith({
     int? id,
     int? profileId,
+    int? fbs,
+    int? ppbs,
+    int? rbs,
     double? hba1c,
     DateTime? recordDate,
     DateTime? createdAt,
@@ -25,6 +34,9 @@ class SugarRecord {
     return SugarRecord(
       id: id ?? this.id,
       profileId: profileId ?? this.profileId,
+      fbs: fbs ?? this.fbs,
+      ppbs: ppbs ?? this.ppbs,
+      rbs: rbs ?? this.rbs,
       hba1c: hba1c ?? this.hba1c,
       recordDate: recordDate ?? this.recordDate,
       createdAt: createdAt ?? this.createdAt,
@@ -35,6 +47,9 @@ class SugarRecord {
     return {
       'id': id,
       'profile_id': profileId,
+      'fbs': fbs,
+      'ppbs': ppbs,
+      'rbs': rbs,
       'hba1c': hba1c,
       'record_date': DateFormat('yyyy-MM-dd').format(recordDate),
       'created_at': DateFormat('yyyy-MM-dd HH:mm:ss').format(createdAt),
@@ -45,6 +60,9 @@ class SugarRecord {
     return SugarRecord(
       id: map['id']?.toInt(),
       profileId: map['profile_id']?.toInt() ?? 0,
+      fbs: map['fbs']?.toInt(),
+      ppbs: map['ppbs']?.toInt(),
+      rbs: map['rbs']?.toInt(),
       hba1c: map['hba1c']?.toDouble() ?? 0.0,
       recordDate: DateTime.parse(map['record_date']),
       createdAt: DateTime.parse(map['created_at']),
@@ -66,7 +84,7 @@ class SugarRecord {
 
   @override
   String toString() {
-    return 'SugarRecord{id: $id, profileId: $profileId, hba1c: $hba1c, recordDate: $recordDate}';
+    return 'SugarRecord{id: $id, profileId: $profileId, fbs: $fbs, ppbs: $ppbs, rbs: $rbs, hba1c: $hba1c, recordDate: $recordDate}';
   }
 
   @override
@@ -75,6 +93,9 @@ class SugarRecord {
     return other is SugarRecord &&
         other.id == id &&
         other.profileId == profileId &&
+        other.fbs == fbs &&
+        other.ppbs == ppbs &&
+        other.rbs == rbs &&
         other.hba1c == hba1c &&
         other.recordDate == recordDate;
   }
@@ -83,6 +104,9 @@ class SugarRecord {
   int get hashCode {
     return id.hashCode ^
         profileId.hashCode ^
+        fbs.hashCode ^
+        ppbs.hashCode ^
+        rbs.hashCode ^
         hba1c.hashCode ^
         recordDate.hashCode;
   }
