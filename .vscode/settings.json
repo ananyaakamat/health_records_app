@@ -1,0 +1,8 @@
+{
+    "chat.tools.terminal.autoApprove": {
+        "/^cmd /c \"cd /d d:\\\\Anant\\\\VSCodeProjects\\\\Flutter_Health_Records\\\\health_records_app\\.worktrees\\\\copilot-worktree-2026-02-11T07-22-33 && git --no-pager status\"$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
+    }
+}

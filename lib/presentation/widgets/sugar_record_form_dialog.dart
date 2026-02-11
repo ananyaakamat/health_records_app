@@ -20,6 +20,9 @@ class SugarRecordFormDialog extends StatefulWidget {
 
 class _SugarRecordFormDialogState extends State<SugarRecordFormDialog> {
   final _formKey = GlobalKey<FormState>();
+  final _fbsController = TextEditingController();
+  final _ppbsController = TextEditingController();
+  final _rbsController = TextEditingController();
   final _hba1cController = TextEditingController();
   DateTime _selectedDate = DateTime.now();
 
@@ -27,6 +30,9 @@ class _SugarRecordFormDialogState extends State<SugarRecordFormDialog> {
   void initState() {
     super.initState();
     if (widget.record != null) {
+      _fbsController.text = widget.record!.fbs?.toString() ?? '';
+      _ppbsController.text = widget.record!.ppbs?.toString() ?? '';
+      _rbsController.text = widget.record!.rbs?.toString() ?? '';
       _hba1cController.text = widget.record!.hba1c.toString();
       _selectedDate = widget.record!.recordDate;
     }
@@ -34,6 +40,9 @@ class _SugarRecordFormDialogState extends State<SugarRecordFormDialog> {
 
   @override
   void dispose() {
+    _fbsController.dispose();
+    _ppbsController.dispose();
+    _rbsController.dispose();
     _hba1cController.dispose();
     super.dispose();
   }
@@ -68,6 +77,9 @@ class _SugarRecordFormDialogState extends State<SugarRecordFormDialog> {
       final record = SugarRecord(
         id: widget.record?.id,
         profileId: widget.profileId,
+        fbs: _fbsController.text.isEmpty ? null : double.parse(_fbsController.text),
+        ppbs: _ppbsController.text.isEmpty ? null : double.parse(_ppbsController.text),
+        rbs: _rbsController.text.isEmpty ? null : double.parse(_rbsController.text),
         hba1c: double.parse(_hba1cController.text),
         recordDate: _selectedDate,
       );
@@ -91,6 +103,75 @@ class _SugarRecordFormDialogState extends State<SugarRecordFormDialog> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              TextFormField(
+                controller: _fbsController,
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
+                decoration: const InputDecoration(
+                  labelText: 'FBS (mg/dL) - Normal: 80-100',
+                  hintText: 'Enter Fasting Blood Sugar',
+                  prefixIcon: Icon(Icons.bloodtype, color: Color(0xFF2E7D84)),
+                ),
+                validator: (value) {
+                  if (value != null && value.isNotEmpty) {
+                    final fbs = double.tryParse(value);
+                    if (fbs == null || fbs <= 0) {
+                      return 'Please enter a valid FBS value';
+                    }
+                    if (fbs > 500) {
+                      return 'FBS value seems too high';
+                    }
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _ppbsController,
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
+                decoration: const InputDecoration(
+                  labelText: 'PPBS (mg/dL) - Normal: 120-140',
+                  hintText: 'Enter Post-Prandial Blood Sugar',
+                  prefixIcon: Icon(Icons.bloodtype, color: Color(0xFF2E7D84)),
+                ),
+                validator: (value) {
+                  if (value != null && value.isNotEmpty) {
+                    final ppbs = double.tryParse(value);
+                    if (ppbs == null || ppbs <= 0) {
+                      return 'Please enter a valid PPBS value';
+                    }
+                    if (ppbs > 500) {
+                      return 'PPBS value seems too high';
+                    }
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _rbsController,
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
+                decoration: const InputDecoration(
+                  labelText: 'RBS (mg/dL) - Normal: <140',
+                  hintText: 'Enter Random Blood Sugar',
+                  prefixIcon: Icon(Icons.bloodtype, color: Color(0xFF2E7D84)),
+                ),
+                validator: (value) {
+                  if (value != null && value.isNotEmpty) {
+                    final rbs = double.tryParse(value);
+                    if (rbs == null || rbs <= 0) {
+                      return 'Please enter a valid RBS value';
+                    }
+                    if (rbs > 500) {
+                      return 'RBS value seems too high';
+                    }
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
               TextFormField(
                 controller: _hba1cController,
                 keyboardType:

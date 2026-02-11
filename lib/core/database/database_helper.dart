@@ -52,6 +52,9 @@ class DatabaseHelper {
       CREATE TABLE ${AppConstants.sugarRecordsTable} (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         profile_id INTEGER NOT NULL,
+        fbs REAL,
+        ppbs REAL,
+        rbs REAL,
         hba1c REAL NOT NULL,
         record_date TEXT NOT NULL,
         created_at TEXT NOT NULL,
@@ -155,6 +158,18 @@ class DatabaseHelper {
       await db.execute('DROP TABLE ${AppConstants.lipidRecordsTable}');
       await db.execute(
           'ALTER TABLE ${AppConstants.lipidRecordsTable}_new RENAME TO ${AppConstants.lipidRecordsTable}');
+    }
+    if (oldVersion < 5 && newVersion >= 5) {
+      // Add FBS, PPBS, RBS columns to sugar_records table
+      await db.execute('''
+        ALTER TABLE ${AppConstants.sugarRecordsTable} ADD COLUMN fbs REAL
+      ''');
+      await db.execute('''
+        ALTER TABLE ${AppConstants.sugarRecordsTable} ADD COLUMN ppbs REAL
+      ''');
+      await db.execute('''
+        ALTER TABLE ${AppConstants.sugarRecordsTable} ADD COLUMN rbs REAL
+      ''');
     }
   }
 
